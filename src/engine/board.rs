@@ -7,14 +7,15 @@ use super::{
     square::{sq, Square},
 };
 
+#[derive(Clone)]
 pub(crate) struct Board {
     pub(crate) cells: [[Square; 4]; 4],
-    legal_moves: HashSet<Move>,
-    pieces_remaining: i8,
-    game_state: GameState,
+    pub(crate) legal_moves: HashSet<Move>,
+    pub(crate) game_state: GameState,
+    pieces_remaining: u8,
 }
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub enum GameState {
     NotStarted,
     InProgress,
@@ -256,7 +257,7 @@ impl Board {
         if (start.rank < 3 && start.file > 0) {
             let mut south = start.rank;
             let mut west = start.file;
-            while south < 4 && west != 0 {
+            while south < 3 && west != 0 {
                 south += 1;
                 west -= 1;
                 if let Some(piece) = self.cells[west][south].occupied() {
