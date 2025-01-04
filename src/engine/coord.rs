@@ -1,6 +1,6 @@
 use core::fmt;
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Eq, Hash, PartialEq)]
 pub(crate) struct Coord {
     // a = 0, b = 1, c = 2, d = 3
     pub(crate) file: usize,
@@ -43,7 +43,7 @@ impl Coord {
         }
     }
 
-    fn get_notation(rank: usize, file: usize) -> String {
+    fn get_notation(file: usize, rank: usize) -> String {
         format!("{}{}", "abcd".chars().nth(file).unwrap(), 4 - rank)
     }
 }
@@ -69,6 +69,10 @@ mod tests {
     macro_rules! validate_coord {
         ($notation:literal, $file:expr, $rank:expr) => {
             let coord = at!($notation);
+            assert_eq!(coord.file, $file);
+            assert_eq!(coord.rank, $rank);
+            assert_eq!(coord.notation, $notation);
+            let coord = Coord::new($file, $rank);
             assert_eq!(coord.file, $file);
             assert_eq!(coord.rank, $rank);
             assert_eq!(coord.notation, $notation);

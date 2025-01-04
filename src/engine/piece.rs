@@ -1,4 +1,4 @@
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Eq, Hash, Copy, Debug, PartialEq)]
 pub(crate) enum Piece {
     King,
     Queen,
