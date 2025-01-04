@@ -4,7 +4,7 @@ use crate::{
 };
 use rand::{seq::*, Rng};
 
-pub(crate) fn generate() -> Option<Board> {
+pub(crate) fn generate(num_pieces: u32) -> Option<Board> {
     let mut rand = rand::thread_rng();
     let candidate_pieces = vec![
         Piece::Pawn,
@@ -17,7 +17,6 @@ pub(crate) fn generate() -> Option<Board> {
         Piece::King,
         Piece::Queen,
     ];
-    let num_pieces = 7;
     let attempts = 1000;
     for i in 0..attempts {
         let board = try_generate(num_pieces, candidate_pieces.clone(), rand.clone());

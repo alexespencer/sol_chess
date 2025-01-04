@@ -353,6 +353,36 @@ impl Board {
     fn create_move(start: &Square, target: Square) -> Move {
         Move::new(start.clone(), target)
     }
+
+    pub(crate) fn from_string(board_string: String) -> Option<Board> {
+        if board_string.chars().count() != 16 {
+            return None;
+        }
+
+        let mut board = Board::new();
+        let mut file = 0;
+        let mut rank = 0;
+        let mut chars = board_string.chars();
+        for r in 0..4 {
+            for f in 0..4 {
+                let c = chars.next().unwrap();
+                let piece = match c {
+                    'K' => Piece::King,
+                    'Q' => Piece::Queen,
+                    'B' => Piece::Bishop,
+                    'N' => Piece::Knight,
+                    'R' => Piece::Rook,
+                    'P' => Piece::Pawn,
+                    '.' => continue,
+                    _ => return None,
+                };
+
+                let square = Square::Occupied(piece, Coord::new(f, r));
+                board.set(square);
+            }
+        }
+        Some(board)
+    }
 }
 
 #[cfg(test)]

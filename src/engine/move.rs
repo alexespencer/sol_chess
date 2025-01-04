@@ -12,7 +12,11 @@ impl Move {
     }
 
     pub(crate) fn notation(&self) -> String {
-        format!("{} -> {}", self.from.notation(), self.to.notation())
+        format!(
+            "{} -> {}",
+            self.from.notation(),
+            self.to.coord_ref().notation
+        )
     }
 }
 
