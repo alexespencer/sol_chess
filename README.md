@@ -62,6 +62,7 @@ Found 1 solutions
 2. Select pieces to place based on its weight.
     3. Eg: Queen is too powerful, so it has lower weightage.
     4. Eg: Knights are confusing. More knights.
+3. Discard puzzles with more than one solution.
 
 ## Example puzzles generated
 
