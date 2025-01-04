@@ -76,10 +76,12 @@ mod tests {
 
     #[test]
     fn generator_smoke() {
-        let board = generate().unwrap();
-        assert_eq!(board.game_state, GameState::InProgress);
+        for _ in 0..10 {
+            let board = generate(5).unwrap();
+            assert_eq!(board.game_state, GameState::InProgress);
 
-        let solutions = Solver::new(board).solve();
-        assert_ne!(solutions.len(), 0);
+            let solutions = Solver::new(board).solve();
+            assert_eq!(solutions.len(), 1);
+        }
     }
 }
