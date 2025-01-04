@@ -88,6 +88,18 @@ impl Board {
         }
     }
 
+    pub(crate) fn empty_squares(&self) -> Vec<Coord> {
+        let mut empty_squares = Vec::new();
+        for file in 0..4 {
+            for rank in 0..4 {
+                if self.cells[file][rank].is_empty() {
+                    empty_squares.push(Coord::new(file, rank));
+                }
+            }
+        }
+        empty_squares
+    }
+
     pub(crate) fn print(&self) -> String {
         let mut builder: Vec<char> = Vec::new();
         for rank in 0..4 {
