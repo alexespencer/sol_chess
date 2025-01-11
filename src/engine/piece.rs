@@ -31,6 +31,17 @@ impl Piece {
             Piece::Pawn => "P",
         }
     }
+
+    pub(crate) fn pretty(&self) -> &str {
+        match self {
+            Piece::King => "♔",
+            Piece::Queen => "♕",
+            Piece::Bishop => "♗",
+            Piece::Knight => "♘",
+            Piece::Rook => "♖",
+            Piece::Pawn => "♙",
+        }
+    }
 }
 
 macro_rules! p {

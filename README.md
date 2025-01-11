@@ -14,46 +14,67 @@ Goal: Generate 'hard' puzzles.
 
 ```bash
 $ sol_chess -g -n 6
-Generated a puzzle with 6 pieces after 330 ms
-PP..
-..PB
-.K..
-.N..
+Generating a puzzle with 6 pieces with a maximum of 5 solutions
+                Total attempts:     7
+           Total pieces placed:    71
+         Success pieces placed:    42
+               Total time (ms):    69
+
+               ♘  .  .  .
+
+               ♙  .  ♖  .
+
+               ♔  .  ♘  ♙
+
+               .  .  .  .
 ```
 
 - Solve a puzzle
 
 ```bash
-$ sol_chess -- --solve PP....PB.K...N..
-PP..
-..PB
-.K..
-.N..
+$ sol_chess -- --solve N...P.R.K.NP....
+               ♘  .  .  .
 
-Found 1 solutions
-1. Nb1 -> c3
-2. Nc3 -> a4
-3. Na4 -> b2
-4. Nb2 -> d3
-5. Nd3 -> b4
+               ♙  .  ♖  .
+
+               ♔  .  ♘  ♙
+
+               .  .  .  .
+
+
+Found 3 solutions
+1. Rc3 -> a3
+2. Ra3 -> a4
+3. Ra4 -> a2
+4. Ra2 -> c2
+5. Rc2 -> d2
 ```
 
 - Generate and solve a puzzle
 
 ```bash
 $ sol_chess -g -n 6 --print
-Generated a puzzle with 6 pieces after 933 ms
-.P.N
-B.R.
-.K..
-..N.
+Generating a puzzle with 6 pieces with a maximum of 5 solutions
+                Total attempts:     4
+           Total pieces placed:    34
+         Success pieces placed:    24
+               Total time (ms):    38
 
-Found 1 solutions
-1. Ba3 -> b4
-2. Bb4 -> c3
-3. Bc3 -> d4
-4. Bd4 -> b2
-5. Bb2 -> c1
+               .  .  ♙  .
+
+               ♕  .  .  ♘
+
+               .  .  .  .
+
+               ♗  ♖  .  ♘
+
+
+Found 5 solutions
+1. Rb1 -> a1
+2. Ra1 -> d1
+3. Rd1 -> d3
+4. Qa3 -> d3
+5. Qd3 -> c4
 ```
 
 ## Heuristics of current algorithm
@@ -62,40 +83,4 @@ Found 1 solutions
 2. Select pieces to place based on its weight.
     3. Eg: Queen is too powerful, so it has lower weightage.
     4. Eg: Knights are confusing. More knights.
-3. Discard puzzles with more than one solution.
 
-## Example puzzles generated
-
-1.
-
-```
-N...
-P.B.
-.R..
-..KP
-```
-
-2.
-
-```
-R...
-..P.
-..B.
-.KNN
-```
-3.
-
-```
-.PN.
-P...
-K..P
-.R..
-```
-
-4.
-
-```
-..PK
-...R
-P..P
-B..N

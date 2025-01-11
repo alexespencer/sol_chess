@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, fmt::Display};
 
 use super::{
     coord::{at, Coord},
@@ -100,24 +100,26 @@ impl Board {
         empty_squares
     }
 
-    pub(crate) fn print(&self) -> String {
-        let mut builder: Vec<char> = Vec::new();
+    pub(crate) fn pretty_print(&self) {
+        println!("{}", self.print(true));
+    }
+
+    fn print(&self, pretty: bool) -> String {
+        let mut board_string = String::new();
         for rank in 0..4 {
+            let mut row = String::new();
             for file in 0..4 {
-                match self.cells[file][rank] {
-                    Square::Empty(_) => builder.push('.'),
-                    Square::Occupied(Piece::King, _) => builder.push('K'),
-                    Square::Occupied(Piece::Queen, _) => builder.push('Q'),
-                    Square::Occupied(Piece::Bishop, _) => builder.push('B'),
-                    Square::Occupied(Piece::Knight, _) => builder.push('N'),
-                    Square::Occupied(Piece::Rook, _) => builder.push('R'),
-                    Square::Occupied(Piece::Pawn, _) => builder.push('P'),
-                }
+                print_square(&mut row, &self.cells[file][rank], pretty);
             }
-            builder.push('\n');
+            if pretty {
+                board_string.push_str(&format!("{:^40}\n", row));
+            } else {
+                board_string.push_str(&row);
+            }
+            board_string.push('\n');
         }
 
-        builder.iter().collect::<String>()
+        board_string
     }
 
     fn calc_legal_moves(&mut self) {
@@ -385,6 +387,24 @@ impl Board {
     }
 }
 
+fn print_square(row: &mut String, square: &Square, pretty: bool) {
+    let contents = if let Square::Occupied(piece, _) = square {
+        if pretty {
+            piece.pretty()
+        } else {
+            piece.notation()
+        }
+    } else {
+        "."
+    };
+
+    if pretty {
+        row.push_str(&format!(" {} ", contents));
+    } else {
+        row.push_str(contents);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::engine::piece::p;
@@ -395,7 +415,7 @@ mod tests {
 
     macro_rules! validate_board {
         ($board:expr, $row1:literal, $row2:literal, $row3:literal, $row4:literal) => {
-            let printed = $board.print();
+            let printed = $board.print(false);
             assert_eq!(
                 printed,
                 format!("{}\n{}\n{}\n{}\n", $row1, $row2, $row3, $row4)

@@ -16,13 +16,12 @@ use crate::solver::solver::Solver;
 fn main() {
     let args: Args = argh::from_env();
     if args.generate {
-        let puzzle = generate_puzzle(args.num_pieces);
+        let puzzle = generate_puzzle(args.num_pieces, args.solutions);
         let Some(board) = puzzle else {
             return;
         };
 
-        println!("{}", board.print());
-
+        board.pretty_print();
         if args.print {
             solve_puzzle(board);
         }
@@ -32,7 +31,7 @@ fn main() {
             println!("Invalid board string");
             return;
         };
-        println!("{}", board.print());
+        board.pretty_print();
         solve_puzzle(board);
     } else {
         println!("Use --help to see available options");
@@ -54,26 +53,29 @@ fn solve_puzzle(board: Board) {
     });
 }
 
-fn generate_puzzle(num_pieces: Option<u32>) -> Option<Board> {
-    let start = std::time::Instant::now();
-    let num_pieces = num_pieces.unwrap_or(5);
-    let board = generate(num_pieces);
-    let elapsed = start.elapsed();
+fn generate_puzzle(num_pieces: Option<u32>, num_solutions: Option<u32>) -> Option<Board> {
+    let mut num_pieces = num_pieces.unwrap_or(5);
+    if num_pieces < 2 {
+        num_pieces = 2;
+    }
 
-    let Some(board) = board else {
-        println!(
-            "Failed to generate a puzzle with {} pieces after {} ms, Try again",
-            num_pieces,
-            elapsed.as_millis()
-        );
+    let mut num_solutions = num_solutions.unwrap_or(5);
+    if num_solutions < 1 {
+        num_solutions = 5;
+    }
+
+    println!(
+        "Generating a puzzle with {} pieces with a maximum of {} solutions",
+        num_pieces, num_solutions
+    );
+    let gen = generate(num_pieces, num_solutions);
+    gen.print_stats();
+
+    let Some(board) = gen.board() else {
+        println!("Failed to generate a puzzle, try again");
         return None;
     };
 
-    println!(
-        "Generated a puzzle with {} pieces after {} ms",
-        num_pieces,
-        elapsed.as_millis()
-    );
     Some(board)
 }
 
@@ -88,6 +90,10 @@ struct Args {
     #[argh(option, short = 'n')]
     /// number of pieces to place on the board while generating a puzzle
     num_pieces: Option<u32>,
+
+    #[argh(option)]
+    /// maximum number of solutions allowed for the generated puzzle. atleast 1. defaults to 5
+    solutions: Option<u32>,
 
     #[argh(switch)]
     /// print the solution. When solving a puzzle, this is always set to true
