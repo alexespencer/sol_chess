@@ -1,7 +1,7 @@
 use std::{fmt::Display, thread::Builder, time::Duration};
 
 use crate::{
-    engine::{board::Board, coord::Coord, piece::Piece, square::Square},
+    engine::{board::Board, piece::Piece, square::Square},
     solver::{self, solver::Solver},
 };
 use indicatif::ProgressBar;
@@ -20,6 +20,14 @@ pub(crate) fn generate(num_pieces: u32, num_solutions: u32) -> GenerateStats {
         Piece::King,
         Piece::Queen,
     ];
+
+    if num_pieces > candidate_pieces.len().try_into().unwrap() {
+        panic!(
+            "Number of pieces to place on the board should be <= {}",
+            candidate_pieces.len()
+        );
+    }
+
     let attempts: u32 = 1000;
     let bar = ProgressBar::new_spinner();
     bar.enable_steady_tick(Duration::from_millis(100));
@@ -121,9 +129,9 @@ fn try_generate(
 
             let index = rand.gen_range(0..candidate_pieces.len());
             let piece = candidate_pieces[index];
-            let coord = empty_squares.choose(&mut rand).unwrap().clone();
-
-            board.set(Square::Occupied(piece.clone(), coord.clone()));
+            let mut random_square = empty_squares.choose(&mut rand).unwrap().clone();
+            random_square.piece = Some(piece);
+            board.set(random_square.clone());
             let solutions = Solver::new(board.clone()).solve();
             if solutions.len() > 0 {
                 placed = true;
@@ -131,7 +139,9 @@ fn try_generate(
                 candidate_pieces.remove(index);
                 continue;
             }
-            board.set(Square::Empty(coord));
+
+            random_square.piece = None;
+            board.set(random_square);
         }
     }
 
@@ -154,7 +164,7 @@ mod tests {
     fn generator_smoke() {
         for _ in 0..10 {
             let gen_stats = generate(5, 5);
-            let board = gen_stats.board.unwrap();
+            let board = gen_stats.board.expect("No puzzle was generated");
             assert_eq!(board.game_state, GameState::InProgress);
 
             let solutions = Solver::new(board).solve();

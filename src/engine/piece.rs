@@ -9,38 +9,43 @@ pub(crate) enum Piece {
 }
 
 impl Piece {
-    pub(crate) fn parse(piece: &str) -> Self {
+    pub(crate) fn parse(piece: &str) -> Option<Self> {
         match piece {
-            "K" => Piece::King,
-            "Q" => Piece::Queen,
-            "B" => Piece::Bishop,
-            "N" => Piece::Knight,
-            "R" => Piece::Rook,
-            "P" => Piece::Pawn,
+            "K" => Some(Piece::King),
+            "Q" => Some(Piece::Queen),
+            "B" => Some(Piece::Bishop),
+            "N" => Some(Piece::Knight),
+            "R" => Some(Piece::Rook),
+            "P" => Some(Piece::Pawn),
+            "." => None,
             p => panic!("Invalid piece {}", p),
         }
     }
 
-    pub(crate) fn notation(&self) -> &str {
-        match self {
+    pub(crate) fn notation(&self) -> String {
+        let n = match self {
             Piece::King => "K",
             Piece::Queen => "Q",
             Piece::Bishop => "B",
             Piece::Knight => "N",
             Piece::Rook => "R",
             Piece::Pawn => "P",
-        }
+        };
+
+        n.to_string()
     }
 
-    pub(crate) fn pretty(&self) -> &str {
-        match self {
+    pub(crate) fn pretty(&self) -> String {
+        let n = match self {
             Piece::King => "♔",
             Piece::Queen => "♕",
             Piece::Bishop => "♗",
             Piece::Knight => "♘",
             Piece::Rook => "♖",
             Piece::Pawn => "♙",
-        }
+        };
+
+        n.to_string()
     }
 }
 
@@ -58,11 +63,11 @@ mod tests {
 
     #[test]
     fn test_piece_parse() {
-        assert_eq!(p!("K"), Piece::King);
-        assert_eq!(p!("Q"), Piece::Queen);
-        assert_eq!(p!("B"), Piece::Bishop);
-        assert_eq!(p!("N"), Piece::Knight);
-        assert_eq!(p!("R"), Piece::Rook);
-        assert_eq!(p!("P"), Piece::Pawn);
+        assert_eq!(p!("K"), Some(Piece::King));
+        assert_eq!(p!("Q"), Some(Piece::Queen));
+        assert_eq!(p!("B"), Some(Piece::Bishop));
+        assert_eq!(p!("N"), Some(Piece::Knight));
+        assert_eq!(p!("R"), Some(Piece::Rook));
+        assert_eq!(p!("P"), Some(Piece::Pawn));
     }
 }
