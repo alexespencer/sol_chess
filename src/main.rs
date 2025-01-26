@@ -7,15 +7,22 @@ mod solver;
 #[allow(unused)]
 mod generator;
 
+#[allow(unused)]
+mod game;
+
 use argh::FromArgs;
 use engine::board::Board;
 
+use crate::game::game as sol_chess_game;
 use crate::generator::generator::generate;
 use crate::solver::solver::Solver;
 
 fn main() {
     let args: Args = argh::from_env();
-    if args.generate {
+
+    if args.game {
+        sol_chess_game::run();
+    } else if args.generate {
         let puzzle = generate_puzzle(args.num_pieces, args.solutions);
         let Some(board) = puzzle else {
             return;
@@ -91,6 +98,10 @@ struct Args {
     #[argh(switch, short = 'g')]
     /// generate a puzzle
     generate: bool,
+
+    #[argh(switch)]
+    /// run the game
+    game: bool,
 
     #[argh(option, short = 'n')]
     /// number of pieces to place on the board while generating a puzzle
