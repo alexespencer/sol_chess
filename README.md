@@ -6,10 +6,11 @@ Goal: Generate 'hard' puzzles.
 
 - Install Rust from [here](https://www.rust-lang.org/tools/install).
 - Run `cargo install --git https://github.com/cool-mist/sol_chess` to install the tool.
+- This installs 2 binaries: `sol_chess` and `sol_cli`.
 
 ## Usage
 
-- Run `sol_chess` to start a windowed GUI game.
+- [WIP] Run `sol_chess` to start a windowed GUI game.
 - Run `sol_cli` to start the CLI tool.
 
 ## CLI Usage
