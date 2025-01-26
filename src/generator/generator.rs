@@ -13,12 +13,11 @@ pub(crate) fn generate(num_pieces: u32, num_solutions: u32) -> GenerateStats {
         Piece::Pawn,
         Piece::Pawn,
         Piece::Pawn,
-        Piece::Rook,
+        Piece::Pawn,
+        Piece::Bishop,
         Piece::Bishop,
         Piece::Knight,
         Piece::Knight,
-        Piece::King,
-        Piece::Queen,
     ];
 
     if num_pieces > candidate_pieces.len().try_into().unwrap() {

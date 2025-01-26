@@ -25,16 +25,21 @@ fn main() {
         if args.print {
             solve_puzzle(board);
         }
-    } else if let Some(board_string) = args.solve {
-        let board = Board::from_string(board_string);
-        let Some(board) = board else {
-            println!("Invalid board string");
+    } else {
+        let board = if let Some(board_string) = args.solve_board {
+            Board::from_string(board_string)
+        } else if let Some(board_id) = args.solve {
+            Board::from_id(board_id)
+        } else {
+            println!("Use --help to see available options");
+            return;
+        };
+        let Ok(board) = board else {
+            println!("Invalid board string/id");
             return;
         };
         board.pretty_print();
         solve_puzzle(board);
-    } else {
-        println!("Use --help to see available options");
     }
 }
 
@@ -100,6 +105,10 @@ struct Args {
     print: bool,
 
     #[argh(option, short = 's')]
-    /// the board to solve
-    solve: Option<String>,
+    /// the id of the board to solve
+    solve: Option<u128>,
+
+    #[argh(option)]
+    /// the board to solve in board representation
+    solve_board: Option<String>,
 }

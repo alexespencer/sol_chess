@@ -5,7 +5,11 @@ use std::{
 };
 
 use super::{
-    cmove::CMove, constants::BOARD_SIZE, piece::Piece, square::{Square, SquarePair}
+    cmove::CMove,
+    constants::BOARD_SIZE,
+    errors::SError,
+    piece::Piece,
+    square::{Square, SquarePair},
 };
 
 #[derive(Clone)]
@@ -32,6 +36,51 @@ impl Board {
             pieces_remaining: 0,
             game_state: GameState::NotStarted,
         }
+    }
+
+    pub(crate) fn from_id(board_id: u128) -> Result<Self, SError> {
+        let mut board = Board::new();
+        let mut working = board_id;
+        for i in (0..BOARD_SIZE).rev() {
+            for j in (0..BOARD_SIZE).rev() {
+                let mask = 0b111;
+                let piece = Board::get_piece_from_encoding((working & mask) as u8);
+                working = working >> 3;
+                let piece = piece?;
+                board.set(Square::new(i, j, piece));
+            }
+        }
+        Ok(board)
+    }
+
+    pub(crate) fn from_string(board_string: String) -> Result<Self, SError> {
+        if board_string.chars().count() != 16 {
+            return Err(SError::InvalidBoard);
+        }
+
+        let mut board = Board::new();
+        let mut file = 0;
+        let mut rank = 0;
+        let mut chars = board_string.chars();
+        for r in 0..BOARD_SIZE {
+            for f in 0..BOARD_SIZE {
+                let c = chars.next().unwrap();
+                let piece = match c {
+                    'K' => Piece::King,
+                    'Q' => Piece::Queen,
+                    'B' => Piece::Bishop,
+                    'N' => Piece::Knight,
+                    'R' => Piece::Rook,
+                    'P' => Piece::Pawn,
+                    '.' => continue,
+                    _ => return Err(SError::InvalidBoard),
+                };
+
+                let square = Square::new(f, r, Some(piece));
+                board.set(square);
+            }
+        }
+        Ok(board)
     }
 
     pub(crate) fn set(&mut self, square: Square) -> Option<Piece> {
@@ -84,6 +133,21 @@ impl Board {
 
     pub(crate) fn pretty_print(&self) {
         println!("{}", self.print(true));
+        println!("{:^40}\n", format!("id: {}", self.id()));
+    }
+
+    pub(crate) fn id(&self) -> u128 {
+        let mut res: u128 = 0;
+
+        for i in 0..BOARD_SIZE {
+            for j in 0..BOARD_SIZE {
+                res = res << 3;
+                let byte = Board::get_piece_encoding(self.cells[i][j]);
+                res = res | byte as u128
+            }
+        }
+
+        res
     }
 
     fn print(&self, pretty: bool) -> String {
@@ -239,39 +303,36 @@ impl Board {
         ret
     }
 
-    pub(crate) fn from_string(board_string: String) -> Option<Board> {
-        if board_string.chars().count() != 16 {
-            return None;
-        }
-
-        let mut board = Board::new();
-        let mut file = 0;
-        let mut rank = 0;
-        let mut chars = board_string.chars();
-        for r in 0..BOARD_SIZE {
-            for f in 0..BOARD_SIZE {
-                let c = chars.next().unwrap();
-                let piece = match c {
-                    'K' => Piece::King,
-                    'Q' => Piece::Queen,
-                    'B' => Piece::Bishop,
-                    'N' => Piece::Knight,
-                    'R' => Piece::Rook,
-                    'P' => Piece::Pawn,
-                    '.' => continue,
-                    _ => return None,
-                };
-
-                let square = Square::new(f, r, Some(piece));
-                board.set(square);
-            }
-        }
-        Some(board)
-    }
-
     fn board_state_changed(&mut self) {
         self.calc_legal_moves();
         self.calc_game_state();
+    }
+
+    fn get_piece_encoding(piece: Option<Piece>) -> u8 {
+        match piece {
+            Some(p) => match p {
+                Piece::King => 0b001,
+                Piece::Queen => 0b010,
+                Piece::Rook => 0b011,
+                Piece::Bishop => 0b100,
+                Piece::Knight => 0b101,
+                Piece::Pawn => 0b110,
+            },
+            None => 0b000,
+        }
+    }
+
+    fn get_piece_from_encoding(encoding: u8) -> Result<Option<Piece>, SError> {
+        match encoding {
+            0b001 => Ok(Some(Piece::King)),
+            0b010 => Ok(Some(Piece::Queen)),
+            0b011 => Ok(Some(Piece::Rook)),
+            0b100 => Ok(Some(Piece::Bishop)),
+            0b101 => Ok(Some(Piece::Knight)),
+            0b110 => Ok(Some(Piece::Pawn)),
+            0b000 => Ok(None),
+            _ => Err(SError::InvalidBoard),
+        }
     }
 }
 
@@ -489,5 +550,22 @@ mod tests {
         board.make_move(mv!("Qa4", "Na1"));
         assert_eq!(1, board.pieces_remaining);
         assert_eq!(GameState::Won, board.game_state);
+    }
+
+    #[test]
+    fn test_encoding() {
+        let mut board = Board::new();
+        board.set(sq!("Pa1"));
+        board.set(sq!("Ra2"));
+        board.set(sq!("Qb2"));
+        board.set(sq!("Kd2"));
+        board.set(sq!("Bd4"));
+        board.set(sq!("Nc4"));
+
+        let id = board.id();
+        let board2 = Board::from_id(id);
+        let board2 = board2.unwrap();
+
+        validate_board!(board2, "..NB", "....", "RQ.K", "P...");
     }
 }
