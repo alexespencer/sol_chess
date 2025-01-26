@@ -1,4 +1,4 @@
 #[derive(Debug)]
-pub(crate) enum SError {
+pub enum SError {
     InvalidBoard,
 }

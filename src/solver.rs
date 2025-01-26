@@ -1,15 +1,15 @@
-use crate::engine::{
-    board::{Board, GameState},
+use crate::board::{
     cmove::CMove,
+    {Board, GameState},
 };
 
-pub(crate) struct Solver {
-    pub(crate) board: Board,
+pub struct Solver {
+    pub board: Board,
     moves: Vec<CMove>,
 }
 
 impl Solver {
-    pub(crate) fn new(board: Board) -> Solver {
+    pub fn new(board: Board) -> Solver {
         Solver {
             board,
             moves: vec![],
@@ -24,7 +24,7 @@ impl Solver {
         Solver { board, moves }
     }
 
-    pub(crate) fn solve(&self) -> Vec<Vec<CMove>> {
+    pub fn solve(&self) -> Vec<Vec<CMove>> {
         let mut solutions = Vec::new();
         if let GameState::Won = self.board.game_state {
             solutions.push(self.moves.clone());
@@ -36,7 +36,7 @@ impl Solver {
         };
 
         self.board.legal_moves.iter().for_each(|m| {
-            let mut solver = self.clone(m.clone());
+            let solver = self.clone(m.clone());
             let more_solutions = solver.solve();
             solutions.extend(more_solutions);
         });
@@ -47,12 +47,14 @@ impl Solver {
 
 #[cfg(test)]
 mod tests {
-    use crate::engine::{
-        piece::{p, Piece},
-        square::{sq, Square},
-    };
-
     use super::*;
+    use crate::board::{square::Square, Board};
+
+    macro_rules! sq {
+        ($sq:literal) => {
+            Square::parse($sq)
+        };
+    }
 
     #[test]
     fn solver_smoke() {

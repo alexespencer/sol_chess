@@ -1,125 +1,122 @@
-#[allow(unused)]
-mod engine;
+use game::texture::PieceTexture;
+use macroquad::prelude::*;
+use sol_chess::board::{square::Square, Board};
 
-#[allow(unused)]
-mod solver;
-
-#[allow(unused)]
-mod generator;
-
-#[allow(unused)]
 mod game;
 
-use argh::FromArgs;
-use engine::board::Board;
+#[macroquad::main("Solitaire Chess")]
+async fn main() {
+    let background_color = Color::from_rgba(196, 195, 208, 255);
+    let game = init().await;
+    loop {
+        clear_background(background_color);
+        game.draw();
+        next_frame().await
+    }
+}
 
-use crate::game::game as sol_chess_game;
-use crate::generator::generator::generate;
-use crate::solver::solver::Solver;
+async fn init() -> Game {
+    set_pc_assets_folder("./assets");
+    let texture_res = load_texture("pieces.png").await.unwrap();
+    texture_res.set_filter(FilterMode::Nearest);
+    build_textures_atlas();
+    let mut board = Board::new();
+    board.set(Square::parse("Pa4"));
+    board.set(Square::parse("Pa3"));
+    board.set(Square::parse("Na2"));
+    board.set(Square::parse("Na1"));
+    board.set(Square::parse("Bb4"));
+    board.set(Square::parse("Bb3"));
+    board.set(Square::parse("Rb2"));
+    board.set(Square::parse("Rb1"));
+    board.set(Square::parse("Kc4"));
+    board.set(Square::parse("Kc3"));
+    board.set(Square::parse("Qc2"));
+    board.set(Square::parse("Qc1"));
 
-fn main() {
-    let args: Args = argh::from_env();
+    let square_width = 128.0;
+    let num_squares = 4;
+    let x = (screen_width() - (square_width * num_squares as f32)) / 2.0;
+    let y = (screen_height() - (square_width * num_squares as f32)) / 2.0;
+    let game = Game::new(board, x, y, square_width, num_squares, texture_res);
 
-    if args.game {
-        sol_chess_game::run();
-    } else if args.generate {
-        let puzzle = generate_puzzle(args.num_pieces, args.solutions);
-        let Some(board) = puzzle else {
-            return;
-        };
+    game
+}
 
-        board.pretty_print();
-        if args.print {
-            solve_puzzle(board);
+struct Game {
+    board: Board,
+    squares: Vec<GameSquare>,
+    texture_res: Texture2D,
+    num_squares: usize,
+}
+
+impl Game {
+    fn new(
+        board: Board,
+        x: f32,
+        y: f32,
+        square_width: f32,
+        num_squares: usize,
+        texture_res: Texture2D,
+    ) -> Self {
+        let dark = Color::from_rgba(83, 104, 120, 255);
+        let light = Color::from_rgba(190, 190, 190, 255);
+        let mut rects = Vec::new();
+        for i in 0..num_squares {
+            for j in 0..num_squares {
+                let x_eff = x + (i as f32 * square_width);
+                let y_eff = y + (j as f32 * square_width);
+                let rect = Rect::new(x_eff, y_eff, square_width, square_width);
+                let color = match (i + j) % 2 {
+                    1 => dark,
+                    _ => light,
+                };
+
+                rects.push(GameSquare { rect, color, i, j });
+            }
         }
-    } else {
-        let board = if let Some(board_string) = args.solve_board {
-            Board::from_string(board_string)
-        } else if let Some(board_id) = args.solve {
-            Board::from_id(board_id)
-        } else {
-            println!("Use --help to see available options");
-            return;
-        };
-        let Ok(board) = board else {
-            println!("Invalid board string/id");
-            return;
-        };
-        board.pretty_print();
-        solve_puzzle(board);
+
+        Self {
+            board,
+            squares: rects,
+            num_squares,
+            texture_res,
+        }
+    }
+
+    fn get(&mut self, i: usize, j: usize) -> &mut GameSquare {
+        &mut self.squares[i * self.num_squares + j]
+    }
+
+    fn draw(&self) {
+        let sprite_size = 100.0;
+        self.squares.iter().for_each(|square| {
+            draw_rectangle(
+                square.rect.x,
+                square.rect.y,
+                square.rect.w,
+                square.rect.h,
+                square.color,
+            );
+
+            if let Some(p) = &self.board.cells[square.i][square.j] {
+                let offset = (square.rect.w - sprite_size) / 2.0;
+                let dtp = PieceTexture::for_piece(*p, sprite_size);
+                draw_texture_ex(
+                    &self.texture_res,
+                    square.rect.x + offset,
+                    square.rect.y + offset,
+                    WHITE,
+                    dtp,
+                );
+            }
+        });
     }
 }
 
-fn solve_puzzle(board: Board) {
-    let solutions = Solver::new(board).solve();
-    if solutions.len() == 0 {
-        println!("No solutions found");
-        return;
-    }
-    println!("Found {} solutions", solutions.len());
-    let solution = solutions.first().unwrap();
-    let mut idx = 0;
-    solution.iter().for_each(|m| {
-        idx += 1;
-        println!("{}. {}", idx, m.notation());
-    });
-}
-
-fn generate_puzzle(num_pieces: Option<u32>, num_solutions: Option<u32>) -> Option<Board> {
-    let mut num_pieces = num_pieces.unwrap_or(5);
-    if num_pieces < 2 {
-        num_pieces = 2;
-    }
-
-    let mut num_solutions = num_solutions.unwrap_or(5);
-    if num_solutions < 1 {
-        num_solutions = 5;
-    }
-
-    println!(
-        "Generating a puzzle with {} pieces with a maximum of {} solutions",
-        num_pieces, num_solutions
-    );
-    let gen = generate(num_pieces, num_solutions);
-    gen.print_stats();
-
-    let Some(board) = gen.board() else {
-        println!("Failed to generate a puzzle, try again");
-        return None;
-    };
-
-    Some(board)
-}
-
-/// Solitaire Chess puzzle generator and solver
-/// - v0.0.1 cool-mist
-#[derive(FromArgs)]
-struct Args {
-    #[argh(switch, short = 'g')]
-    /// generate a puzzle
-    generate: bool,
-
-    #[argh(switch)]
-    /// run the game
-    game: bool,
-
-    #[argh(option, short = 'n')]
-    /// number of pieces to place on the board while generating a puzzle
-    num_pieces: Option<u32>,
-
-    #[argh(option)]
-    /// maximum number of solutions allowed for the generated puzzle. atleast 1. defaults to 5
-    solutions: Option<u32>,
-
-    #[argh(switch)]
-    /// print the solution. When solving a puzzle, this is always set to true
-    print: bool,
-
-    #[argh(option, short = 's')]
-    /// the id of the board to solve
-    solve: Option<u128>,
-
-    #[argh(option)]
-    /// the board to solve in board representation
-    solve_board: Option<String>,
+struct GameSquare {
+    rect: Rect,
+    color: Color,
+    i: usize,
+    j: usize,
 }

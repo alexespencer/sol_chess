@@ -2,6 +2,7 @@
 name = "sol_chess"
 version = "0.1.1"
 edition = "2021"
+default-run = "sol_chess"
 
 [dependencies]
 argh = "0.1.13"

@@ -1,0 +1,26 @@
+*********** Game 2 ************
+
+Generating a puzzle with 7 pieces with a maximum of 5 solutions
+                Total attempts:    47
+           Total pieces placed:   473
+         Success pieces placed:   329
+               Total time (ms):   279
+
+               .  .  .  ♗               
+
+               ♘  .  ♗  .               
+
+               ♙  .  .  .               
+
+               .  ♘  ♖  ♗               
+
+
+           id: 25288852387844           
+
+Found 4 solutions
+1. RxBd1
+2. BxBc3
+3. RxNb1
+4. NxRb1
+5. NxBc3
+6. NxPa2

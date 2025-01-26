@@ -1,19 +1,19 @@
-use super::{board::Board, piece::Piece, square::Square};
+use super::{piece::Piece, square::Square};
 
 #[derive(PartialEq, Hash, Eq, Clone)]
-pub(crate) struct CMove {
-    pub(crate) from_piece: Piece,
-    pub(crate) from: Square,
-    pub(crate) to_piece: Piece,
-    pub(crate) to: Square,
+pub struct CMove {
+    pub from_piece: Piece,
+    pub from: Square,
+    pub to_piece: Piece,
+    pub to: Square,
 
     // Used to disambiguate when looking at notation
     disambig: String,
 }
 
 impl CMove {
-    pub(crate) fn new(from: Square, to: Square) -> Self {
-        let qualifier = String::from("");
+    pub fn new(from: Square, to: Square) -> Self {
+        let disambig = String::from("");
         let from_piece = from.piece.expect("Trying to move a blank");
         let to_piece = to.piece.expect("Trying to capture a blank");
         CMove {
@@ -21,11 +21,11 @@ impl CMove {
             from,
             to_piece,
             to,
-            disambig: "".to_string(),
+            disambig
         }
     }
 
-    pub(crate) fn notation(&self) -> String {
+    pub fn notation(&self) -> String {
         let piece_qualifier = match &self.from_piece {
             Piece::Pawn => self.from.file_notation(),
             p => p.notation(),
@@ -38,11 +38,3 @@ impl CMove {
         )
     }
 }
-
-macro_rules! mv {
-    ($from:literal, $to:literal) => {{
-        CMove::new(sq!($from), sq!($to))
-    }};
-}
-
-pub(crate) use mv;

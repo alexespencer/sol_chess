@@ -1,14 +1,14 @@
-use std::{fmt::Display, thread::Builder, time::Duration};
+use std::{fmt::Display, time::Duration};
 
 use crate::{
-    engine::{board::Board, piece::Piece, square::Square},
-    solver::{self, solver::Solver},
+    board::{piece::Piece, Board},
+    solver::Solver,
 };
 use indicatif::ProgressBar;
 use rand::{seq::*, Rng};
 
-pub(crate) fn generate(num_pieces: u32, num_solutions: u32) -> GenerateStats {
-    let mut rand = rand::thread_rng();
+pub fn generate(num_pieces: u32, num_solutions: u32) -> GenerateStats {
+    let rand = rand::thread_rng();
     let candidate_pieces = vec![
         Piece::Pawn,
         Piece::Pawn,
@@ -16,8 +16,14 @@ pub(crate) fn generate(num_pieces: u32, num_solutions: u32) -> GenerateStats {
         Piece::Pawn,
         Piece::Bishop,
         Piece::Bishop,
+        Piece::Bishop,
+        Piece::Bishop,
         Piece::Knight,
         Piece::Knight,
+        Piece::Knight,
+        Piece::Queen,
+        Piece::Rook,
+        Piece::Rook,
     ];
 
     if num_pieces > candidate_pieces.len().try_into().unwrap() {
@@ -31,7 +37,7 @@ pub(crate) fn generate(num_pieces: u32, num_solutions: u32) -> GenerateStats {
     let bar = ProgressBar::new_spinner();
     bar.enable_steady_tick(Duration::from_millis(100));
     let mut overall_stats = GenerateStats::new(0, 0, 0, 0, None);
-    for i in 0..attempts {
+    for _ in 0..attempts {
         let stats = try_generate(
             num_pieces,
             num_solutions,
@@ -56,7 +62,7 @@ pub(crate) fn generate(num_pieces: u32, num_solutions: u32) -> GenerateStats {
     overall_stats
 }
 
-pub(crate) struct GenerateStats {
+pub struct GenerateStats {
     piece_total: u32,
     piece_success: u32,
     total: u32,
@@ -81,7 +87,7 @@ impl GenerateStats {
         }
     }
 
-    pub(crate) fn print_stats(&self) {
+    pub fn print_stats(&self) {
         let mut stats = String::new();
         add_stat(&mut stats, "Total attempts", self.total);
         add_stat(&mut stats, "Total pieces placed", self.piece_total);
@@ -91,7 +97,7 @@ impl GenerateStats {
         println!("{}", stats);
     }
 
-    pub(crate) fn board(mut self) -> Option<Board> {
+    pub fn board(self) -> Option<Board> {
         self.board
     }
 }
@@ -112,7 +118,7 @@ fn try_generate(
     let mut board = Board::new();
     let mut piece_total = 0;
     let mut piece_success = 0;
-    let mut now = std::time::Instant::now();
+    let now = std::time::Instant::now();
     for _ in 0..num_pieces {
         let mut placed = false;
         let empty_squares = board.empty_squares();
@@ -155,7 +161,7 @@ fn try_generate(
 
 #[cfg(test)]
 mod tests {
-    use crate::{engine::board::GameState, solver::solver::Solver};
+    use crate::{board::GameState, solver::Solver};
 
     use super::*;
 

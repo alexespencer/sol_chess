@@ -1,22 +1,22 @@
-use std::{
-    collections::{HashMap, HashSet},
-    fmt::Display,
-    mem,
-};
+pub mod cmove;
+mod constants;
+pub mod errors;
+pub mod piece;
+pub mod square;
 
-use super::{
-    cmove::CMove,
-    constants::BOARD_SIZE,
-    errors::SError,
-    piece::Piece,
-    square::{Square, SquarePair},
-};
+use std::{collections::HashSet, mem};
+
+use cmove::CMove;
+use constants::BOARD_SIZE;
+use errors::SError;
+use piece::Piece;
+use square::{Square, SquarePair};
 
 #[derive(Clone)]
-pub(crate) struct Board {
-    pub(crate) cells: [[Option<Piece>; BOARD_SIZE]; BOARD_SIZE],
-    pub(crate) legal_moves: HashSet<CMove>,
-    pub(crate) game_state: GameState,
+pub struct Board {
+    pub cells: [[Option<Piece>; BOARD_SIZE]; BOARD_SIZE],
+    pub legal_moves: HashSet<CMove>,
+    pub game_state: GameState,
     pieces_remaining: u8,
 }
 
@@ -29,7 +29,7 @@ pub enum GameState {
 }
 
 impl Board {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Board {
             cells: [[None; BOARD_SIZE]; BOARD_SIZE],
             legal_moves: HashSet::new(),
@@ -38,7 +38,7 @@ impl Board {
         }
     }
 
-    pub(crate) fn from_id(board_id: u128) -> Result<Self, SError> {
+    pub fn from_id(board_id: u128) -> Result<Self, SError> {
         let mut board = Board::new();
         let mut working = board_id;
         for i in (0..BOARD_SIZE).rev() {
@@ -53,14 +53,12 @@ impl Board {
         Ok(board)
     }
 
-    pub(crate) fn from_string(board_string: String) -> Result<Self, SError> {
+    pub fn from_string(board_string: String) -> Result<Self, SError> {
         if board_string.chars().count() != 16 {
             return Err(SError::InvalidBoard);
         }
 
         let mut board = Board::new();
-        let mut file = 0;
-        let mut rank = 0;
         let mut chars = board_string.chars();
         for r in 0..BOARD_SIZE {
             for f in 0..BOARD_SIZE {
@@ -83,7 +81,7 @@ impl Board {
         Ok(board)
     }
 
-    pub(crate) fn set(&mut self, square: Square) -> Option<Piece> {
+    pub fn set(&mut self, square: Square) -> Option<Piece> {
         let new_is_occuppied = square.piece.is_some();
         let existing = mem::replace(&mut self.cells[square.file][square.rank], square.piece);
 
@@ -101,7 +99,7 @@ impl Board {
         existing
     }
 
-    pub(crate) fn make_move(&mut self, mv: CMove) -> Option<CMove> {
+    pub fn make_move(&mut self, mv: CMove) -> Option<CMove> {
         if !self.legal_moves.contains(&mv) {
             println!("Invalid move - {}", mv.notation());
             println!("Legal moves - ");
@@ -112,14 +110,14 @@ impl Board {
         }
 
         let from_piece = mem::replace(&mut self.cells[mv.from.file][mv.from.rank], None);
-        mem::replace(&mut self.cells[mv.to.file][mv.to.rank], from_piece);
+        self.cells[mv.to.file][mv.to.rank] = from_piece;
 
         self.pieces_remaining -= 1;
         self.board_state_changed();
         Some(mv)
     }
 
-    pub(crate) fn empty_squares(&self) -> Vec<Square> {
+    pub fn empty_squares(&self) -> Vec<Square> {
         let mut empty_squares = Vec::new();
         for file in 0..BOARD_SIZE {
             for rank in 0..BOARD_SIZE {
@@ -131,12 +129,12 @@ impl Board {
         empty_squares
     }
 
-    pub(crate) fn pretty_print(&self) {
+    pub fn pretty_print(&self) {
         println!("{}", self.print(true));
         println!("{:^40}\n", format!("id: {}", self.id()));
     }
 
-    pub(crate) fn id(&self) -> u128 {
+    pub fn id(&self) -> u128 {
         let mut res: u128 = 0;
 
         for i in 0..BOARD_SIZE {
@@ -256,8 +254,6 @@ impl Board {
                 return false;
             }
         }
-
-        true
     }
 
     fn calc_game_state(&mut self) {
@@ -356,11 +352,19 @@ fn get_square_for_display(piece: &Option<Piece>, pretty: bool) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::engine::cmove::mv;
-    use crate::engine::piece::p;
-    use crate::engine::square::sq;
-
     use super::*;
+
+    macro_rules! sq {
+        ($sq:literal) => {
+            Square::parse($sq)
+        };
+    }
+
+    macro_rules! mv {
+        ($from:literal, $to:literal) => {{
+            CMove::new(sq!($from), sq!($to))
+        }};
+    }
 
     macro_rules! validate_board {
         ($board:expr, $row1:literal, $row2:literal, $row3:literal, $row4:literal) => {

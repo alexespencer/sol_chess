@@ -6,14 +6,18 @@ Goal: Generate 'hard' puzzles.
 
 - Install Rust from [here](https://www.rust-lang.org/tools/install).
 - Run `cargo install --git https://github.com/cool-mist/sol_chess` to install the tool.
-- Run `sol_chess --help` to see the options.
 
 ## Usage
+
+- Run `sol_chess` to start a windowed GUI game.
+- Run `sol_cli` to start the CLI tool.
+
+## CLI Usage
 
 - Generate a puzzle
 
 ```bash
-$ sol_chess -g -n 6
+$ sol_cli -g -n 6
 Generating a puzzle with 6 pieces with a maximum of 5 solutions
                 Total attempts:     7
            Total pieces placed:    71
@@ -27,12 +31,17 @@ Generating a puzzle with 6 pieces with a maximum of 5 solutions
                ♔  .  ♘  ♙
 
                .  .  .  .
+
+
+          id: 202859896274992
 ```
 
-- Solve a puzzle
+- Solve a puzzle by ID, or by board string
 
 ```bash
-$ sol_chess -- --solve N...P.R.K.NP....
+$ sol_cli --solve 202859896274992
+$ sol_cli --solve-board N...P.R.K.NP....
+
                ♘  .  .  .
 
                ♙  .  ♖  .
@@ -42,39 +51,15 @@ $ sol_chess -- --solve N...P.R.K.NP....
                .  .  .  .
 
 
+          id: 202859896274992
+
 Found 3 solutions
-1. Rc3 -> a3
-2. Ra3 -> a4
-3. Ra4 -> a2
-4. Ra2 -> c2
-5. Rc2 -> d2
-```
+1. RxNc2
+2. RxPd2
+3. RxKa2
+4. RxPa3
+5. RxNa4
 
-- Generate and solve a puzzle
-
-```bash
-$ sol_chess -g -n 6 --print
-Generating a puzzle with 6 pieces with a maximum of 5 solutions
-                Total attempts:     4
-           Total pieces placed:    34
-         Success pieces placed:    24
-               Total time (ms):    38
-
-               .  .  ♙  .
-
-               ♕  .  .  ♘
-
-               .  .  .  .
-
-               ♗  ♖  .  ♘
-
-
-Found 5 solutions
-1. Rb1 -> a1
-2. Ra1 -> d1
-3. Rd1 -> d3
-4. Qa3 -> d3
-5. Qd3 -> c4
 ```
 
 ## Heuristics of current algorithm

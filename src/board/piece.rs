@@ -1,5 +1,5 @@
 #[derive(Clone, Eq, Hash, Copy, Debug, PartialEq)]
-pub(crate) enum Piece {
+pub enum Piece {
     King,
     Queen,
     Bishop,
@@ -9,7 +9,7 @@ pub(crate) enum Piece {
 }
 
 impl Piece {
-    pub(crate) fn parse(piece: &str) -> Option<Self> {
+    pub fn parse(piece: &str) -> Option<Self> {
         match piece {
             "K" => Some(Piece::King),
             "Q" => Some(Piece::Queen),
@@ -22,7 +22,7 @@ impl Piece {
         }
     }
 
-    pub(crate) fn notation(&self) -> String {
+    pub fn notation(&self) -> String {
         let n = match self {
             Piece::King => "K",
             Piece::Queen => "Q",
@@ -35,7 +35,7 @@ impl Piece {
         n.to_string()
     }
 
-    pub(crate) fn pretty(&self) -> String {
+    pub fn pretty(&self) -> String {
         let n = match self {
             Piece::King => "♔",
             Piece::Queen => "♕",
@@ -49,17 +49,15 @@ impl Piece {
     }
 }
 
-macro_rules! p {
-    ($piece:literal) => {
-        Piece::parse($piece)
-    };
-}
-
-pub(crate) use p;
-
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    macro_rules! p {
+        ($piece:literal) => {
+            Piece::parse($piece)
+        };
+    }
 
     #[test]
     fn test_piece_parse() {

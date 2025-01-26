@@ -1,34 +1,33 @@
-use crate::engine::constants::BOARD_SIZE;
-
+use super::constants::BOARD_SIZE;
 use super::piece::Piece;
 use core::fmt;
 
 #[derive(Clone, Eq, Hash, PartialEq)]
-pub(crate) struct Square {
+pub struct Square {
     // a = 0, b = 1, c = 2, d = 3 and so on.
-    pub(crate) file: usize,
+    pub file: usize,
 
     // 1 = 0, 2 = 1, 3 = 2, 4 = 3 and so on.
-    pub(crate) rank: usize,
+    pub rank: usize,
 
-    pub(crate) piece: Option<Piece>,
+    pub piece: Option<Piece>,
 }
 
-pub(crate) struct SquarePair {
-    pub(crate) start: Square,
-    pub(crate) end: Square,
-    pub(crate) dx: usize,
-    pub(crate) dy: usize,
-    pub(crate) x_dir: i8,
-    pub(crate) y_dir: i8,
+pub struct SquarePair {
+    pub start: Square,
+    pub end: Square,
+    pub dx: usize,
+    pub dy: usize,
+    pub x_dir: i8,
+    pub y_dir: i8,
 }
 
 impl Square {
-    pub(crate) fn new(file: usize, rank: usize, piece: Option<Piece>) -> Self {
+    pub fn new(file: usize, rank: usize, piece: Option<Piece>) -> Self {
         Square { file, rank, piece }
     }
 
-    pub(crate) fn parse(notation: &str) -> Self {
+    pub fn parse(notation: &str) -> Self {
         let mut chars = notation.chars();
         let piece = chars.next().expect("Piece missing");
         let piece = Piece::parse(&piece.to_string());
@@ -49,15 +48,15 @@ impl Square {
         Square::new(file, rank, piece)
     }
 
-    pub(crate) fn file_notation(&self) -> String {
+    pub fn file_notation(&self) -> String {
         String::from("abcd".chars().nth(self.file).unwrap())
     }
 
-    pub(crate) fn rank_notation(&self) -> String {
+    pub fn rank_notation(&self) -> String {
         format!("{}", BOARD_SIZE - self.rank)
     }
 
-    pub(crate) fn notation(&self) -> String {
+    pub fn notation(&self) -> String {
         format!(
             "{}{}{}",
             self.piece_notation(),
@@ -66,7 +65,7 @@ impl Square {
         )
     }
 
-    pub(crate) fn is_occupied(&self) -> bool {
+    pub fn is_occupied(&self) -> bool {
         self.piece.is_some()
     }
 
@@ -80,7 +79,7 @@ impl Square {
 }
 
 impl SquarePair {
-    pub(crate) fn new(start: Square, end: Square) -> Self {
+    pub fn new(start: Square, end: Square) -> Self {
         let mut dx = 0;
         let mut dy = 0;
         let mut x_dir = 0;
@@ -111,18 +110,10 @@ impl SquarePair {
         }
     }
 
-    pub(crate) fn is_different(&self) -> bool {
+    pub fn is_different(&self) -> bool {
         self.dx != 0 || self.dy != 0
     }
 }
-
-macro_rules! sq {
-    ($sq:literal) => {
-        Square::parse($sq)
-    };
-}
-
-pub(crate) use sq;
 
 impl fmt::Debug for Square {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

@@ -1,0 +1,26 @@
+*********** Game 6 ************
+
+Generating a puzzle with 7 pieces with a maximum of 5 solutions
+                Total attempts:     1
+           Total pieces placed:     9
+         Success pieces placed:     7
+               Total time (ms):     0
+
+               .  ♙  .  .               
+
+               .  .  .  .               
+
+               ♗  .  ♗  ♗               
+
+               ♖  ♙  .  ♘               
+
+
+           id: 2456822087717            
+
+Found 5 solutions
+1. RxBa2
+2. RxBc2
+3. RxBd2
+4. RxNd1
+5. RxPb1
+6. RxPb4

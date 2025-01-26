@@ -1,0 +1,26 @@
+*********** Game 3 ************
+
+Generating a puzzle with 7 pieces with a maximum of 5 solutions
+                Total attempts:    22
+           Total pieces placed:   239
+         Success pieces placed:   154
+               Total time (ms):   160
+
+               ♗  .  ♖  ♙               
+
+               .  .  .  ♙               
+
+               .  .  .  ♙               
+
+               .  ♙  .  ♗               
+
+
+          id: 140737595313588           
+
+Found 5 solutions
+1. RxBa4
+2. RxPd4
+3. RxPd3
+4. RxPd2
+5. RxBd1
+6. RxPb1
