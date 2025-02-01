@@ -4,7 +4,12 @@ pub mod errors;
 pub mod piece;
 pub mod square;
 
-use std::{collections::HashSet, mem};
+use core::fmt;
+use std::{
+    collections::HashSet,
+    fmt::{Display, Formatter},
+    mem,
+};
 
 use cmove::CMove;
 use constants::BOARD_SIZE;
@@ -16,12 +21,12 @@ use square::{Square, SquarePair};
 pub struct Board {
     pub cells: [[Option<Piece>; BOARD_SIZE]; BOARD_SIZE],
     pub legal_moves: HashSet<CMove>,
-    pub game_state: GameState,
+    pub game_state: BoardState,
     pieces_remaining: u8,
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]
-pub enum GameState {
+pub enum BoardState {
     NotStarted,
     InProgress,
     Lost,
@@ -34,7 +39,7 @@ impl Board {
             cells: [[None; BOARD_SIZE]; BOARD_SIZE],
             legal_moves: HashSet::new(),
             pieces_remaining: 0,
-            game_state: GameState::NotStarted,
+            game_state: BoardState::NotStarted,
         }
     }
 
@@ -258,13 +263,13 @@ impl Board {
 
     fn calc_game_state(&mut self) {
         self.game_state = if self.pieces_remaining == 0 {
-            GameState::NotStarted
+            BoardState::NotStarted
         } else if self.pieces_remaining == 1 {
-            GameState::Won
+            BoardState::Won
         } else if self.legal_moves.is_empty() {
-            GameState::Lost
+            BoardState::Lost
         } else {
-            GameState::InProgress
+            BoardState::InProgress
         }
     }
 
@@ -347,6 +352,19 @@ fn get_square_for_display(piece: &Option<Piece>, pretty: bool) -> String {
         format!(" {} ", contents)
     } else {
         contents
+    }
+}
+
+impl Display for BoardState {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        let display = match self {
+            BoardState::NotStarted => "Not Started",
+            BoardState::InProgress => "In Progress",
+            BoardState::Lost => "Lost",
+            BoardState::Won => "Won",
+        };
+
+        write!(f, "{}", display)
     }
 }
 
@@ -502,7 +520,7 @@ mod tests {
     #[test]
     fn test_smoke_puzzle() {
         let mut board = Board::new();
-        assert_eq!(GameState::NotStarted, board.game_state);
+        assert_eq!(BoardState::NotStarted, board.game_state);
         assert_eq!(0, board.pieces_remaining);
 
         // K . . .
@@ -510,22 +528,22 @@ mod tests {
         // . . R .
         // N . . .
         board.set(sq!("Ka4"));
-        assert_eq!(GameState::Won, board.game_state);
+        assert_eq!(BoardState::Won, board.game_state);
 
         board.set(sq!("Pb3"));
         board.set(sq!("Rc2"));
         board.set(sq!("Na1"));
 
-        assert_eq!(GameState::InProgress, board.game_state);
+        assert_eq!(BoardState::InProgress, board.game_state);
         assert_eq!(4, board.pieces_remaining);
 
         assert!(board.make_move(mv!("Na1", "Rc2")).is_some());
         assert_eq!(3, board.pieces_remaining);
-        assert_eq!(GameState::InProgress, board.game_state);
+        assert_eq!(BoardState::InProgress, board.game_state);
 
         assert!(board.make_move(mv!("Pb3", "Ka4")).is_some());
         assert_eq!(2, board.pieces_remaining);
-        assert_eq!(GameState::Lost, board.game_state);
+        assert_eq!(BoardState::Lost, board.game_state);
 
         // P . . .
         // . . . .
@@ -540,12 +558,12 @@ mod tests {
         // . . N .
         // P . . .
         assert_eq!(4, board.pieces_remaining);
-        assert_eq!(GameState::InProgress, board.game_state);
+        assert_eq!(BoardState::InProgress, board.game_state);
 
         board.make_move(mv!("Qa3", "Pa4"));
         board.make_move(mv!("Nc2", "Pa1"));
         assert_eq!(2, board.pieces_remaining);
-        assert_eq!(GameState::InProgress, board.game_state);
+        assert_eq!(BoardState::InProgress, board.game_state);
 
         // Q . . .
         // . . . .
@@ -553,7 +571,7 @@ mod tests {
         // N . . .
         board.make_move(mv!("Qa4", "Na1"));
         assert_eq!(1, board.pieces_remaining);
-        assert_eq!(GameState::Won, board.game_state);
+        assert_eq!(BoardState::Won, board.game_state);
     }
 
     #[test]

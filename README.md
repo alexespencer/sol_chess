@@ -10,7 +10,7 @@ Goal: Generate 'hard' puzzles.
 
 ## Usage
 
-- [WIP] Run `sol_chess` to start a windowed GUI game.
+- Run `sol_chess` to start a windowed GUI game.
 - Run `sol_cli` to start the CLI tool.
 
 ## CLI Usage

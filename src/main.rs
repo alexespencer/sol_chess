@@ -1,18 +1,33 @@
+use core::fmt;
+use std::fmt::{Display, Formatter};
+
 use game::texture::PieceTexture;
 use macroquad::prelude::*;
-use sol_chess::board::{square::Square, Board};
+use sol_chess::{
+    board::{Board, BoardState},
+    generator,
+};
 
 mod game;
 
 #[macroquad::main("Solitaire Chess")]
 async fn main() {
     let background_color = Color::from_rgba(196, 195, 208, 255);
-    let game = init().await;
+    let mut game = init().await;
     loop {
         clear_background(background_color);
+        draw_heading("Solitaire Chess");
+        game.handle_input();
         game.draw();
         next_frame().await
     }
+}
+
+fn draw_heading(title: &str) {
+    let dims = measure_text(title, None, 60, 1.0);
+    let x = screen_width() / 2.0 - dims.width / 2.0;
+    let y = 2.0 * dims.height;
+    draw_text(title, x, y, 60.0, BLACK);
 }
 
 async fn init() -> Game {
@@ -20,20 +35,8 @@ async fn init() -> Game {
     let texture_res = load_texture("pieces.png").await.unwrap();
     texture_res.set_filter(FilterMode::Nearest);
     build_textures_atlas();
-    let mut board = Board::new();
-    board.set(Square::parse("Pa4"));
-    board.set(Square::parse("Pa3"));
-    board.set(Square::parse("Na2"));
-    board.set(Square::parse("Na1"));
-    board.set(Square::parse("Bb4"));
-    board.set(Square::parse("Bb3"));
-    board.set(Square::parse("Rb2"));
-    board.set(Square::parse("Rb1"));
-    board.set(Square::parse("Kc4"));
-    board.set(Square::parse("Kc3"));
-    board.set(Square::parse("Qc2"));
-    board.set(Square::parse("Qc1"));
-
+    let generate = generator::generate(6, 100);
+    let board = generate.board().expect("No puzzle was generated");
     let square_width = 128.0;
     let num_squares = 4;
     let x = (screen_width() - (square_width * num_squares as f32)) / 2.0;
@@ -44,10 +47,31 @@ async fn init() -> Game {
 }
 
 struct Game {
+    original_board: Board,
     board: Board,
     squares: Vec<GameSquare>,
     texture_res: Texture2D,
     num_squares: usize,
+    state: GameState,
+    debug: bool,
+    info_square: Rect,
+}
+
+struct GameSquare {
+    rect: Rect,
+    color: Color,
+    is_source: bool,
+    is_target: bool,
+    is_previous_target: bool,
+    i: usize,
+    j: usize,
+}
+
+#[derive(Copy, Clone)]
+enum GameState {
+    SelectSource(Option<(usize, usize)>),
+    SelectTarget((usize, usize)),
+    GameOver((usize, usize)),
 }
 
 impl Game {
@@ -72,15 +96,31 @@ impl Game {
                     _ => light,
                 };
 
-                rects.push(GameSquare { rect, color, i, j });
+                rects.push(GameSquare {
+                    rect,
+                    color,
+                    i,
+                    j,
+                    is_source: false,
+                    is_target: false,
+                    is_previous_target: false,
+                });
             }
         }
 
+        let info_x = x;
+        let info_y = y + (num_squares as f32 * square_width) + square_width / 2.0;
+        let info_w = square_width * num_squares as f32;
+
         Self {
+            original_board: board.clone(),
             board,
             squares: rects,
             num_squares,
             texture_res,
+            state: GameState::SelectSource(None),
+            debug: false,
+            info_square: Rect::new(info_x, info_y, info_w, square_width),
         }
     }
 
@@ -90,33 +130,307 @@ impl Game {
 
     fn draw(&self) {
         let sprite_size = 100.0;
+        let mut selected_square = None;
         self.squares.iter().for_each(|square| {
+            let color = if square.is_source {
+                Color::from_rgba(152, 152, 152, 255)
+            } else if square.is_target {
+                Color::from_rgba(152, 129, 123, 255)
+            } else {
+                square.color
+            };
+
             draw_rectangle(
                 square.rect.x,
                 square.rect.y,
                 square.rect.w,
                 square.rect.h,
-                square.color,
+                color,
             );
 
             if let Some(p) = &self.board.cells[square.i][square.j] {
                 let offset = (square.rect.w - sprite_size) / 2.0;
                 let dtp = PieceTexture::for_piece(*p, sprite_size);
+                if !square.is_source {
+                    draw_texture_ex(
+                        &self.texture_res,
+                        square.rect.x + offset,
+                        square.rect.y + offset,
+                        WHITE,
+                        dtp,
+                    );
+                } else {
+                    selected_square = Some(square);
+                }
+            }
+        });
+
+        if let Some(selected_square) = selected_square {
+            if let Some(p) = self.board.cells[selected_square.i][selected_square.j] {
+                let dtp = PieceTexture::for_piece(p, sprite_size);
                 draw_texture_ex(
                     &self.texture_res,
-                    square.rect.x + offset,
-                    square.rect.y + offset,
+                    mouse_position().0 - sprite_size / 2.0,
+                    mouse_position().1 - sprite_size / 2.0,
                     WHITE,
                     dtp,
                 );
             }
-        });
+        }
+
+        draw_text(
+            &format!("Press 'R' to reset"),
+            self.info_square.x + 20.0,
+            self.info_square.y + 20.0,
+            20.0,
+            BLACK,
+        );
+
+        draw_text(
+            &format!("Press 'N' for new game (when the current game is won)"),
+            self.info_square.x + 20.0,
+            self.info_square.y + 40.0,
+            20.0,
+            BLACK,
+        );
+
+        draw_text(
+            &format!("Press 'D' to toggle debug mode"),
+            self.info_square.x + 20.0,
+            self.info_square.y + 60.0,
+            20.0,
+            GRAY,
+        );
+
+        if self.debug {
+            let mut debug_lines = vec![];
+            let (mx, my) = mouse_position();
+            let hover_square = self.squares.iter().find(|s| {
+                let c = Circle::new(mx, my, 0.0);
+                if c.overlaps_rect(&s.rect) {
+                    return true;
+                }
+                return false;
+            });
+            debug_lines.push(format!("Game State: {}", self.state));
+            debug_lines.push(format!("Board State: {}", self.board.game_state));
+            if let Some(hover_square) = hover_square {
+                debug_lines.push(format!("Hover: [ {}, {} ]", hover_square.i, hover_square.j));
+            }
+            self.add_debug_info(debug_lines);
+
+            self.show_fps();
+        }
+    }
+
+    fn handle_input(&mut self) {
+        if is_key_released(KeyCode::R) {
+            self.reset();
+            return;
+        }
+
+        if is_key_released(KeyCode::N) {
+            if let GameState::GameOver(_) = self.state {
+                self.next_puzzle();
+            }
+            return;
+        }
+
+        if is_key_released(KeyCode::D) {
+            self.debug = !self.debug;
+            return;
+        }
+
+        if is_mouse_button_pressed(MouseButton::Right) {
+            let current_state = self.state.clone();
+            let new_state = match current_state {
+                GameState::SelectSource(_) => GameState::SelectSource(None),
+                GameState::SelectTarget((_, _)) => {
+                    self.reset_squares();
+                    GameState::SelectSource(None)
+                }
+                GameState::GameOver((i, j)) => GameState::SelectSource(Some((i, j))),
+            };
+            self.state = new_state;
+            return;
+        }
+
+        if is_mouse_button_pressed(MouseButton::Left) {
+            let current_state = self.state.clone();
+            let new_state = match current_state {
+                GameState::SelectSource(previous_target) => {
+                    self.handle_select_source(mouse_position(), previous_target)
+                }
+                GameState::SelectTarget(source) => GameState::SelectTarget(source),
+                GameState::GameOver(previous_target) => GameState::GameOver(previous_target),
+            };
+
+            self.state = new_state;
+        }
+
+        if is_mouse_button_released(MouseButton::Left) {
+            let current_state = self.state.clone();
+            let new_state = match current_state {
+                GameState::SelectSource(previous_target) => {
+                    GameState::SelectSource(previous_target)
+                }
+                GameState::SelectTarget(source) => {
+                    self.handle_select_target(mouse_position(), source)
+                }
+                GameState::GameOver(previous_target) => GameState::GameOver(previous_target),
+            };
+
+            self.state = new_state;
+        }
+    }
+
+    fn handle_select_source(
+        &mut self,
+        mouse_position: (f32, f32),
+        previous_target: Option<(usize, usize)>,
+    ) -> GameState {
+        self.reset_squares();
+        let (x, y) = mouse_position;
+        let mouse = Circle::new(x, y, 0.0);
+        let mut selected = None;
+        for square in &mut self.squares {
+            if mouse.overlaps_rect(&square.rect) {
+                if let Some(_) = self.board.cells[square.i][square.j] {
+                    selected = Some((square.i, square.j));
+                }
+            }
+        }
+
+        if let Some((i, j)) = selected {
+            self.get(i, j).is_source = true;
+            let mut target_squares = vec![];
+            for m in self.board.legal_moves.iter() {
+                if m.from.file == i && m.from.rank == j {
+                    target_squares.push((m.to.file, m.to.rank));
+                }
+            }
+
+            for (i, j) in target_squares {
+                self.get(i, j).is_target = true;
+            }
+
+            return GameState::SelectTarget(selected.unwrap());
+        }
+
+        if let Some((i, j)) = previous_target {
+            self.get(i, j).is_previous_target = true;
+        }
+
+        return GameState::SelectSource(None);
+    }
+
+    fn handle_select_target(
+        &mut self,
+        mouse_position: (f32, f32),
+        source: (usize, usize),
+    ) -> GameState {
+        let (x, y) = mouse_position;
+        let mouse = Circle::new(x, y, 0.0);
+
+        let mut selected = None;
+        for square in &mut self.squares {
+            if mouse.overlaps_rect(&square.rect) {
+                if let Some(_) = self.board.cells[square.i][square.j] {
+                    selected = Some((square.i, square.j));
+                }
+            }
+        }
+
+        let (s_x, s_y) = source;
+        let Some((x, y)) = selected else {
+            self.get(s_x, s_y).is_source = true;
+            return GameState::SelectTarget(source);
+        };
+
+        if x == s_x && y == s_y {
+            self.get(s_x, s_y).is_source = true;
+            return GameState::SelectTarget(source);
+        }
+
+        let mut is_legal = false;
+        if self.get(x, y).is_target {
+            is_legal = true;
+        }
+
+        if is_legal {
+            let m = self.board.legal_moves.iter().find(|m| {
+                m.from.file == s_x && m.from.rank == s_y && m.to.file == x && m.to.rank == y
+            });
+
+            let m = m.expect("legal move should be found");
+
+            self.board.make_move(m.clone());
+
+            if self.board.game_state == BoardState::Won || self.board.game_state == BoardState::Lost
+            {
+                self.reset_squares();
+                return GameState::GameOver((x, y));
+            }
+
+            self.reset_squares();
+            self.get(x, y).is_target = true;
+            return GameState::SelectSource(Some((x, y)));
+        }
+
+        self.reset_squares();
+        return GameState::SelectSource(None);
+    }
+
+    fn reset(&mut self) {
+        self.board = self.original_board.clone();
+        self.reset_squares();
+        self.state = GameState::SelectSource(None);
+    }
+
+    fn next_puzzle(&mut self) {
+        self.reset();
+        let generate = generator::generate(6, 100);
+        let board = generate.board().expect("No puzzle was generated");
+        self.original_board = board.clone();
+        self.board = board;
+    }
+
+    fn reset_squares(&mut self) {
+        for i in 0..self.num_squares {
+            for j in 0..self.num_squares {
+                self.get(i, j).is_source = false;
+                self.get(i, j).is_target = false;
+            }
+        }
+    }
+
+    fn add_debug_info(&self, lines: Vec<String>) {
+        let mut y = 20.0;
+        for line in lines {
+            draw_text(&line, 10.0, y, 20.0, BLACK);
+            y += 25.0;
+        }
+    }
+
+    fn show_fps(&self) {
+        let fps = get_fps();
+        draw_text(
+            &format!("FPS: {}", fps),
+            10.0,
+            screen_height() - 20.0,
+            20.0,
+            BLACK,
+        );
     }
 }
 
-struct GameSquare {
-    rect: Rect,
-    color: Color,
-    i: usize,
-    j: usize,
+impl Display for GameState {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            GameState::SelectSource(Some(x)) => write!(f, "Select Source [ {}, {} ]", x.0, x.1),
+            GameState::SelectSource(None) => write!(f, "Select Source [ ]"),
+            GameState::SelectTarget(x) => write!(f, "Select Target [ {}, {} ]", x.0, x.1),
+            GameState::GameOver(x) => write!(f, "Game Over [ {}, {} ]", x.0, x.1),
+        }
+    }
 }

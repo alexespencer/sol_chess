@@ -161,7 +161,7 @@ fn try_generate(
 
 #[cfg(test)]
 mod tests {
-    use crate::{board::GameState, solver::Solver};
+    use crate::{board::BoardState, solver::Solver};
 
     use super::*;
 
@@ -170,7 +170,7 @@ mod tests {
         for _ in 0..10 {
             let gen_stats = generate(5, 5);
             let board = gen_stats.board.expect("No puzzle was generated");
-            assert_eq!(board.game_state, GameState::InProgress);
+            assert_eq!(board.game_state, BoardState::InProgress);
 
             let solutions = Solver::new(board).solve();
             assert!(solutions.len() <= 5);

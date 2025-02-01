@@ -1,6 +1,6 @@
 use crate::board::{
     cmove::CMove,
-    {Board, GameState},
+    {Board, BoardState},
 };
 
 pub struct Solver {
@@ -26,12 +26,12 @@ impl Solver {
 
     pub fn solve(&self) -> Vec<Vec<CMove>> {
         let mut solutions = Vec::new();
-        if let GameState::Won = self.board.game_state {
+        if let BoardState::Won = self.board.game_state {
             solutions.push(self.moves.clone());
             return solutions;
         }
 
-        let GameState::InProgress = self.board.game_state else {
+        let BoardState::InProgress = self.board.game_state else {
             return solutions;
         };
 
@@ -81,7 +81,7 @@ mod tests {
             solution
                 .into_iter()
                 .for_each(|m| assert!(board.make_move(m).is_some()));
-            assert_eq!(GameState::Won, board.game_state);
+            assert_eq!(BoardState::Won, board.game_state);
         }
     }
 
