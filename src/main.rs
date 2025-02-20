@@ -17,8 +17,9 @@ async fn main() {
     loop {
         clear_background(background_color);
         draw_heading("Solitaire Chess");
-        game.handle_input();
+        game.update_window_size();
         game.draw();
+        game.handle_input();
         next_frame().await
     }
 }
@@ -55,6 +56,8 @@ struct Game {
     state: GameState,
     debug: bool,
     info_square: Rect,
+    window_height: f32,
+    window_width: f32,
 }
 
 struct GameSquare {
@@ -121,7 +124,58 @@ impl Game {
             state: GameState::SelectSource(None),
             debug: false,
             info_square: Rect::new(info_x, info_y, info_w, square_width),
+            window_height: screen_height(),
+            window_width: screen_width(),
         }
+    }
+
+    fn update_window_size(&mut self) {
+        let new_height = screen_height();
+        let new_width = screen_width();
+
+        if new_height == self.window_height && new_width == self.window_width {
+            return;
+        }
+
+        self.window_height = screen_height();
+        self.window_width = screen_width();
+
+        let square_width = 128.0;
+        let num_squares = 4;
+        let x = (self.window_width - (square_width * num_squares as f32)) / 2.0;
+        let y = (self.window_height - (square_width * num_squares as f32)) / 2.0;
+
+        let dark = Color::from_rgba(83, 104, 120, 255);
+        let light = Color::from_rgba(190, 190, 190, 255);
+        let mut rects = Vec::new();
+        for i in 0..num_squares {
+            for j in 0..num_squares {
+                let x_eff = x + (i as f32 * square_width);
+                let y_eff = y + (j as f32 * square_width);
+                let rect = Rect::new(x_eff, y_eff, square_width, square_width);
+                let color = match (i + j) % 2 {
+                    1 => dark,
+                    _ => light,
+                };
+
+                rects.push(GameSquare {
+                    rect,
+                    color,
+                    i,
+                    j,
+                    is_source: false,
+                    is_target: false,
+                    is_previous_target: false,
+                });
+            }
+        }
+
+        let info_x = x;
+        let info_y = y + (num_squares as f32 * square_width) + square_width / 2.0;
+        let info_w = square_width * num_squares as f32;
+
+        self.squares = rects;
+        self.info_square = Rect::new(info_x, info_y, info_w, square_width);
     }
 
     fn get(&mut self, i: usize, j: usize) -> &mut GameSquare {
@@ -239,6 +293,10 @@ impl Game {
         if is_key_released(KeyCode::D) {
             self.debug = !self.debug;
             return;
+        }
+
+        if is_key_released(KeyCode::Q) {
+            std::process::exit(0);
         }
 
         if is_mouse_button_pressed(MouseButton::Right) {
