@@ -6,10 +6,7 @@ default-run = "sol_chess"
 
 [dependencies]
 argh = "0.1.13"
-getrandom = { version = "0.3.1", features = ["wasm_js"] }
-indicatif = "0.17.9"
 macroquad = "0.4.13"
-rand = "0.8.5"
 
 [profile.release]
 opt-level = 's'
