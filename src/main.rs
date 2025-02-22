@@ -32,8 +32,8 @@ fn draw_heading(title: &str) {
 }
 
 async fn init() -> Game {
-    set_pc_assets_folder("./assets");
-    let texture_res = load_texture("pieces.png").await.unwrap();
+    let texture_bytes = include_bytes!("../assets/pieces.png");
+    let texture_res = Texture2D::from_file_with_format(&texture_bytes[..], None);
     texture_res.set_filter(FilterMode::Nearest);
     build_textures_atlas();
     let generate = generator::generate(6, 100);
