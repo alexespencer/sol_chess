@@ -299,15 +299,22 @@ impl Game {
             std::process::exit(0);
         }
 
-        if is_mouse_button_pressed(MouseButton::Right) {
+        if is_mouse_button_released(MouseButton::Left) {
             let current_state = self.state.clone();
             let new_state = match current_state {
-                GameState::SelectSource(_) => GameState::SelectSource(None),
-                GameState::SelectTarget((_, _)) => {
-                    self.reset_squares();
-                    GameState::SelectSource(None)
+                GameState::SelectSource(previous_target) => {
+                    self.handle_select_source(mouse_position(), previous_target)
                 }
-                GameState::GameOver((i, j)) => GameState::SelectSource(Some((i, j))),
+                GameState::SelectTarget(source) => {
+                    let next = self.handle_select_target(mouse_position(), source);
+                    if let GameState::SelectTarget(_) = next {
+                        self.reset_squares();
+                        GameState::SelectSource(None)
+                    } else {
+                        next
+                    }
+                }
+                GameState::GameOver(previous_target) => GameState::GameOver(previous_target),
             };
             self.state = new_state;
             return;
@@ -320,21 +327,6 @@ impl Game {
                     self.handle_select_source(mouse_position(), previous_target)
                 }
                 GameState::SelectTarget(source) => GameState::SelectTarget(source),
-                GameState::GameOver(previous_target) => GameState::GameOver(previous_target),
-            };
-
-            self.state = new_state;
-        }
-
-        if is_mouse_button_released(MouseButton::Left) {
-            let current_state = self.state.clone();
-            let new_state = match current_state {
-                GameState::SelectSource(previous_target) => {
-                    GameState::SelectSource(previous_target)
-                }
-                GameState::SelectTarget(source) => {
-                    self.handle_select_target(mouse_position(), source)
-                }
                 GameState::GameOver(previous_target) => GameState::GameOver(previous_target),
             };
 

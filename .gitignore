@@ -21,3 +21,4 @@ Cargo.lock
 .idea/
 
 dist/
+sol_chess.tar.gz
