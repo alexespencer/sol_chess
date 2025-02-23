@@ -3,6 +3,7 @@ use std::fmt::{Display, Formatter};
 
 use game::texture::PieceTexture;
 use macroquad::prelude::*;
+use miniquad::date;
 use sol_chess::{
     board::{Board, BoardState},
     generator,
@@ -12,6 +13,7 @@ mod game;
 
 #[macroquad::main("Solitaire Chess")]
 async fn main() {
+    rand::srand(date::now() as u64);
     let background_color = Color::from_rgba(196, 195, 208, 255);
     let mut game = init().await;
     loop {
