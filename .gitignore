@@ -22,3 +22,4 @@ Cargo.lock
 
 dist/
 sol_chess.tar.gz
+local-deploy/
