@@ -1,8 +1,16 @@
 use argh::FromArgs;
 
 use sol_chess::board::Board;
-use sol_chess::generator;
+use sol_chess::generator::{self, RandomRange};
 use sol_chess::solver::Solver;
+
+// Learn how to specify a different dependency for this binary
+struct MacroquadRngTodo;
+impl RandomRange for MacroquadRngTodo {
+    fn gen_range(&self, min: usize, max: usize) -> usize {
+        macroquad::rand::gen_range(min, max)
+    }
+}
 
 fn main() {
     let args: Args = argh::from_env();
@@ -65,7 +73,7 @@ fn generate_puzzle(num_pieces: Option<u32>, num_solutions: Option<u32>) -> Optio
         "Generating a puzzle with {} pieces with a maximum of {} solutions",
         num_pieces, num_solutions
     );
-    let gen = generator::generate(num_pieces, num_solutions);
+    let gen = generator::generate(num_pieces, num_solutions, &MacroquadRngTodo);
     gen.print_stats();
 
     let Some(board) = gen.board() else {

@@ -1,4 +1,4 @@
-use game::Game;
+use game::{Game, MacroquadRandAdapter};
 use macroquad::prelude::*;
 use miniquad::date;
 use sol_chess::generator;
@@ -37,7 +37,7 @@ async fn init() -> Game {
     let texture_res = Texture2D::from_file_with_format(&texture_bytes[..], None);
     texture_res.set_filter(FilterMode::Nearest);
     build_textures_atlas();
-    let generate = generator::generate(6, 100);
+    let generate = generator::generate(6, 100, &MacroquadRandAdapter);
     let board = generate.board().expect("No puzzle was generated");
     let game = Game::new(board, texture_res);
 

@@ -4,15 +4,22 @@ use std::{
 };
 
 use button::Button;
-use macroquad::{math, prelude::*};
+use macroquad::{math, prelude::*, rand};
 use sol_chess::{
     board::{Board, BoardState},
-    generator,
+    generator::{self, RandomRange},
 };
 use texture::PieceTexture;
 
 pub mod button;
 pub mod texture;
+
+pub struct MacroquadRandAdapter;
+impl RandomRange for MacroquadRandAdapter {
+    fn gen_range(&self, min: usize, max: usize) -> usize {
+        rand::gen_range(min, max)
+    }
+}
 
 pub struct Game {
     // The generated puzzle. We keep a copy of this to reset the game.
@@ -445,7 +452,7 @@ impl Game {
 
     fn next_puzzle(&mut self) {
         self.reset();
-        let generate = generator::generate(6, 100);
+        let generate = generator::generate(6, 100, &MacroquadRandAdapter);
         let board = generate.board().expect("No puzzle was generated");
         self.original_board = board.clone();
         self.board = board;
