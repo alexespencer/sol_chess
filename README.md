@@ -15,6 +15,10 @@ Goal: Generate 'hard' puzzles.
 - Run `sol_chess` to start a windowed GUI game.
 - Run `sol_cli` to start the CLI tool.
 
+## Demo site
+
+- Play a demo of the game [here](https://games.neophyte.me/sol_chess/)
+
 ## CLI Usage
 
 - Generate a puzzle
