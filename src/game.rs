@@ -1,6 +1,9 @@
-use std::fmt::{self, Display, Formatter};
+use std::{
+    collections::HashMap,
+    fmt::{self, Display, Formatter},
+};
 
-use button::{Button, ButtonAction};
+use button::Button;
 use macroquad::{math, prelude::*};
 use sol_chess::{
     board::{Board, BoardState},
@@ -35,7 +38,7 @@ pub struct Game {
     window_width: f32,
     squares: Vec<GameSquare>,
     heading_rect: Rect,
-    btns: Vec<Button>,
+    btns: HashMap<ButtonAction, Button>,
 }
 
 struct GameSquare {
@@ -46,6 +49,12 @@ struct GameSquare {
     is_previous_target: bool,
     i: usize,
     j: usize,
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+pub enum ButtonAction {
+    Reset,
+    Next,
 }
 
 #[derive(Copy, Clone)]
@@ -70,7 +79,7 @@ impl Game {
             texture_res,
             state: GameState::SelectSource(None),
             debug: false,
-            btns: Vec::new(),
+            btns: HashMap::new(),
             window_height: 0.,
             window_width: 0.,
             square_width: 0.,
@@ -85,7 +94,7 @@ impl Game {
     }
 
     pub fn update_window_size(&mut self) {
-        let new_height = math::clamp(screen_height(),400.0,  800.0);
+        let new_height = math::clamp(screen_height(), 400.0, 800.0);
         let new_width = math::clamp(screen_width(), 500.0, 1000.0);
         if new_height == self.window_height && new_width == self.window_width {
             return;
@@ -97,21 +106,20 @@ impl Game {
     }
 
     pub fn handle_input(&mut self) {
-        let mut button_action = None;
+        let mut btn_clicked = None;
         for btn in &mut self.btns {
-            btn.handle_input();
-            if btn.is_clicked() {
-                button_action = Some(btn.action);
+            btn.1.handle_input();
+            if btn.1.is_clicked() {
+                btn_clicked = Some(btn.0.clone());
+                break;
             }
         }
 
-        if let Some(action) = button_action {
+        if let Some(action) = btn_clicked {
             match action {
                 ButtonAction::Reset => self.reset(),
                 ButtonAction::Next => self.next_puzzle(),
             }
-
-            return;
         }
 
         if is_key_released(KeyCode::D) {
@@ -138,6 +146,7 @@ impl Game {
                         next
                     }
                 }
+
                 GameState::GameOver(previous_target) => GameState::GameOver(previous_target),
             };
             self.state = new_state;
@@ -221,7 +230,7 @@ impl Game {
 
     fn draw_buttons(&self) {
         for btn in &self.btns {
-            btn.draw();
+            btn.1.draw();
         }
     }
 
@@ -300,26 +309,20 @@ impl Game {
 
         let btn_y = board_width + board_y + 0.3 * self.square_width;
         let btn_x_offset = 0.5 * (board_width / 2. - btn_w);
-        let reset_btn = Button::new(
-            "Reset",
-            board_x + btn_x_offset,
-            btn_y,
-            btn_w,
-            btn_h,
-            ButtonAction::Reset,
-        );
-
+        let reset_btn = Button::new("Reset", board_x + btn_x_offset, btn_y, btn_w, btn_h);
         let mut next_btn = Button::new(
             "Next",
             board_x + (0.5 * board_width) + btn_x_offset,
             btn_y,
             btn_w,
             btn_h,
-            ButtonAction::Next,
         );
 
         next_btn.is_active = false;
-        self.btns = vec![reset_btn, next_btn];
+
+        self.btns = HashMap::new();
+        self.btns.insert(ButtonAction::Next, next_btn);
+        self.btns.insert(ButtonAction::Reset, reset_btn);
     }
 
     fn handle_select_source(
@@ -408,11 +411,11 @@ impl Game {
             {
                 self.reset_squares();
                 if self.board.game_state == BoardState::Won {
-                    for btn in &mut self.btns {
-                        if let ButtonAction::Next = btn.action {
-                            btn.is_active = true;
-                        }
-                    }
+                    let next_btn = self
+                        .btns
+                        .get_mut(&ButtonAction::Next)
+                        .expect("Cannot find next button");
+                    next_btn.is_active = true;
                 }
 
                 return GameState::GameOver((x, y));
@@ -430,11 +433,12 @@ impl Game {
     fn reset(&mut self) {
         self.board = self.original_board.clone();
         self.reset_squares();
-        for btn in &mut self.btns {
-            if let ButtonAction::Next = btn.action {
-                btn.is_active = false;
-            }
-        }
+
+        let next_button = self
+            .btns
+            .get_mut(&ButtonAction::Next)
+            .expect("Cannot find next button");
+        next_button.is_active = false;
 
         self.state = GameState::SelectSource(None);
     }

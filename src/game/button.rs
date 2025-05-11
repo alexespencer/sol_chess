@@ -3,21 +3,14 @@ use macroquad::prelude::*;
 pub struct Button {
     pub text: String,
     pub is_active: bool,
-    pub action: ButtonAction,
     is_down: bool,
     is_clicked: bool,
     rect: Rect,
     shadow_width: f32,
 }
 
-#[derive(Debug, Clone, Copy)]
-pub enum ButtonAction {
-    Reset,
-    Next,
-}
-
 impl Button {
-    pub fn new(text: &str, x: f32, y: f32, width: f32, height: f32, action: ButtonAction) -> Self {
+    pub fn new(text: &str, x: f32, y: f32, width: f32, height: f32) -> Self {
         let rect = Rect::new(x, y, width, height);
         Self {
             text: text.to_string(),
@@ -25,7 +18,6 @@ impl Button {
             is_clicked: false,
             is_active: true,
             rect,
-            action,
             shadow_width: 5.0,
         }
     }
