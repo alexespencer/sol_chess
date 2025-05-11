@@ -100,7 +100,7 @@ impl Game {
         let mut button_action = None;
         for btn in &mut self.btns {
             btn.handle_input();
-            if btn.is_pressed {
+            if btn.is_clicked() {
                 button_action = Some(btn.action);
             }
         }
@@ -431,7 +431,6 @@ impl Game {
         self.board = self.original_board.clone();
         self.reset_squares();
         for btn in &mut self.btns {
-            btn.reset();
             if let ButtonAction::Next = btn.action {
                 btn.is_active = false;
             }
