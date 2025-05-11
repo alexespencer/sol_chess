@@ -27,16 +27,55 @@ impl Button {
     }
 
     pub fn draw(&self) {
+        self.draw_button();
+        self.draw_label();
+    }
+
+    fn draw_button(&self) {
         let bg_color = Color::from_rgba(190, 190, 190, 255);
         draw_rectangle(self.rect.x, self.rect.y, self.rect.w, self.rect.h, bg_color);
 
+        let color = Color::from_rgba(0, 0, 0, 100);
+        let width = 5.0;
+        draw_rectangle(
+            self.rect.x + self.rect.w,
+            self.rect.y + width,
+            width,
+            self.rect.h,
+            color,
+        );
+
+        draw_rectangle(
+            self.rect.x + width,
+            self.rect.y + self.rect.h,
+            self.rect.w - width,
+            width,
+            color,
+        );
+
+        draw_triangle(
+            vec2(self.rect.x + self.rect.w, self.rect.y),
+            vec2(self.rect.x + self.rect.w + width, self.rect.y + width),
+            vec2(self.rect.x + self.rect.w, self.rect.y + width),
+            color,
+        );
+
+        draw_triangle(
+            vec2(self.rect.x, self.rect.y + self.rect.h),
+            vec2(self.rect.x + width, self.rect.y + self.rect.h + width),
+            vec2(self.rect.x + width, self.rect.y + self.rect.h),
+            color,
+        );
+    }
+
+    fn draw_label(&self) {
         let font_color = if self.is_active {
             Color::from_rgba(0, 0, 0, 255)
         } else {
             Color::from_rgba(100, 0, 0, 255)
         };
 
-        let font_size = (0.6 * self.rect.h) as u16;
+        let font_size = (0.5 * self.rect.h) as u16;
         let dims = measure_text(&self.text, None, font_size, 1.0);
         draw_text(
             &self.text,

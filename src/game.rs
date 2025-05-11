@@ -295,26 +295,26 @@ impl Game {
 
         self.squares = rects;
 
-        let btn_height = 0.1 * self.window_height;
-        let btn_y = board_width + board_y + 0.15 * self.square_width;
-        let btn_w = board_width * 0.25;
+        let btn_h = 0.08 * self.window_height;
+        let btn_w = board_width * 0.2;
 
-        // The button will be centered between 2 squares
+        let btn_y = board_width + board_y + 0.3 * self.square_width;
         let btn_x_offset = 0.5 * (board_width / 2. - btn_w);
         let reset_btn = Button::new(
             "Reset",
             board_x + btn_x_offset,
             btn_y,
             btn_w,
-            btn_height,
+            btn_h,
             ButtonAction::Reset,
         );
+
         let mut next_btn = Button::new(
             "Next",
             board_x + (0.5 * board_width) + btn_x_offset,
             btn_y,
             btn_w,
-            btn_height,
+            btn_h,
             ButtonAction::Next,
         );
 
