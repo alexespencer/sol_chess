@@ -5,7 +5,20 @@ use sol_chess::generator;
 
 mod game;
 
-#[macroquad::main("Solitaire Chess")]
+fn window_conf() -> Conf {
+    let window_name = match std::env::var("TESTING") {
+        Ok(_) => "DEV TESTING MOVE TO WORKSPACE 10",
+        Err(_) => "Solitaire Chess",
+    };
+
+    Conf {
+        window_title: window_name.to_string(),
+        fullscreen: false,
+        ..Default::default()
+    }
+}
+
+#[macroquad::main(window_conf)]
 async fn main() {
     rand::srand(date::now() as u64);
     let background_color = Color::from_rgba(196, 195, 208, 255);
