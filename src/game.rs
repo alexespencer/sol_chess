@@ -1,7 +1,7 @@
 use std::fmt::{self, Display, Formatter};
 
 use button::{Button, ButtonAction};
-use macroquad::prelude::*;
+use macroquad::{math, prelude::*};
 use sol_chess::{
     board::{Board, BoardState},
     generator,
@@ -85,18 +85,8 @@ impl Game {
     }
 
     pub fn update_window_size(&mut self) {
-        let new_height = if screen_height() > 800.0 {
-            800.0
-        } else {
-            screen_height()
-        };
-
-        let new_width = if screen_width() > 1000.0 {
-            1000.0
-        } else {
-            screen_width()
-        };
-
+        let new_height = math::clamp(screen_height(),400.0,  800.0);
+        let new_width = math::clamp(screen_width(), 500.0, 1000.0);
         if new_height == self.window_height && new_width == self.window_width {
             return;
         }
@@ -306,15 +296,14 @@ impl Game {
         self.squares = rects;
 
         let btn_height = 0.1 * self.window_height;
-        let btn_displ = (self.window_height
-            - (self.num_squares as f32 * self.square_width + board_y)
-            - btn_height)
-            * 0.5;
-        let btn_y = self.num_squares as f32 * self.square_width + board_y + btn_displ;
-        let btn_w = self.num_squares as f32 * self.square_width * 0.5;
+        let btn_y = board_width + board_y + 0.15 * self.square_width;
+        let btn_w = board_width * 0.25;
+
+        // The button will be centered between 2 squares
+        let btn_x_offset = 0.5 * (board_width / 2. - btn_w);
         let reset_btn = Button::new(
             "Reset",
-            board_x,
+            board_x + btn_x_offset,
             btn_y,
             btn_w,
             btn_height,
@@ -322,7 +311,7 @@ impl Game {
         );
         let mut next_btn = Button::new(
             "Next",
-            board_x + btn_w,
+            board_x + (0.5 * board_width) + btn_x_offset,
             btn_y,
             btn_w,
             btn_height,
