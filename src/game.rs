@@ -94,8 +94,8 @@ impl Game {
     }
 
     pub fn update_window_size(&mut self) {
-        let new_height = math::clamp(screen_height(), 400.0, 800.0);
-        let new_width = math::clamp(screen_width(), 500.0, 1000.0);
+        let new_height = math::clamp(screen_height(), 100.0, 800.0);
+        let new_width = math::clamp(screen_width(), 100.0, 1000.0);
         if new_height == self.window_height && new_width == self.window_width {
             return;
         }

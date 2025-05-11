@@ -98,12 +98,12 @@ impl Button {
     }
 
     fn draw_label(&self) {
-        let font_color = match self.is_active { 
+        let font_color = match self.is_active {
             true => Color::from_rgba(0, 0, 0, 255),
-            false => Color::from_rgba(100, 100, 100, 255)
+            false => Color::from_rgba(100, 100, 100, 255),
         };
 
-        let font_size = (0.5 * self.rect.h) as u16;
+        let font_size = (0.3 * self.rect.w) as u16;
         let dims = measure_text(&self.text, None, font_size, 1.0);
         let button_draw_offset = self.get_button_draw_offset();
 
