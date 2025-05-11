@@ -1,17 +1,43 @@
 use macroquad::prelude::*;
 
 pub struct Button {
-    pub text: String,
     pub is_active: bool,
+    text: String,
     is_down: bool,
     is_clicked: bool,
     rect: Rect,
     shadow_width: f32,
+    color: ButtonColor,
+}
+
+pub enum ButtonColor {
+    Grey,
+    Green,
+    Yellow,
+}
+
+impl ButtonColor {
+    fn to_bg_color(&self) -> Color {
+        match self {
+            ButtonColor::Grey => Color::from_rgba(140, 140, 140, 200),
+            ButtonColor::Green => Color::from_rgba(112, 140, 141, 200),
+            ButtonColor::Yellow => Color::from_rgba(123, 70, 85, 200),
+        }
+    }
+
+    fn to_shadow_color(&self) -> Color {
+        let bg_color = self.to_bg_color();
+        Color::from_rgba(
+            (bg_color.r * 255.) as u8,
+            (bg_color.g * 255.) as u8,
+            (bg_color.b * 255.) as u8,
+            100,
+        )
+    }
 }
 
 impl Button {
-    pub fn new(text: &str, x: f32, y: f32, width: f32, height: f32) -> Self {
-        let rect = Rect::new(x, y, width, height);
+    pub fn new(text: &str, rect: Rect, color: ButtonColor) -> Self {
         Self {
             text: text.to_string(),
             is_down: false,
@@ -19,6 +45,7 @@ impl Button {
             is_active: true,
             rect,
             shadow_width: 5.0,
+            color,
         }
     }
 
@@ -37,7 +64,11 @@ impl Button {
     }
 
     fn draw_button(&self) {
-        let bg_color = Color::from_rgba(190, 190, 190, 255);
+        let bg_color = match self.is_active {
+            true => self.color.to_bg_color(),
+            false => ButtonColor::Grey.to_bg_color(),
+        };
+
         let button_draw_offset = self.get_button_draw_offset();
         draw_rectangle(
             self.rect.x + button_draw_offset,
@@ -59,7 +90,7 @@ impl Button {
             return;
         }
 
-        let color = Color::from_rgba(0, 0, 0, 100);
+        let color = self.color.to_shadow_color();
         draw_rectangle(
             self.rect.x + self.rect.w,
             self.rect.y + self.shadow_width,

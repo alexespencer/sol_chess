@@ -3,7 +3,7 @@ use std::{
     fmt::{self, Display, Formatter},
 };
 
-use button::Button;
+use button::{Button, ButtonColor};
 use macroquad::{math, prelude::*, rand};
 use sol_chess::{
     board::{Board, BoardState},
@@ -189,9 +189,9 @@ impl Game {
         let mut selected_square = None;
         self.squares.iter().for_each(|square| {
             let color = if square.is_source {
-                Color::from_rgba(152, 152, 152, 255)
+                Color::from_rgba(112, 105, 141, 255)
             } else if square.is_target {
-                Color::from_rgba(152, 129, 123, 255)
+                Color::from_rgba(112, 150, 141, 255)
             } else {
                 square.color
             };
@@ -279,7 +279,7 @@ impl Game {
         let dims = measure_text(self.heading_text.as_str(), None, f, 1.0);
         self.heading_rect = Rect::new(
             board_x + (board_width - dims.width) / 2.0,
-            board_y / 2.0,
+            0.85 * board_y,
             dims.width,
             dims.height,
         );
@@ -316,13 +316,20 @@ impl Game {
 
         let btn_y = board_width + board_y + 0.3 * self.square_width;
         let btn_x_offset = 0.5 * (board_width / 2. - btn_w);
-        let reset_btn = Button::new("Reset", board_x + btn_x_offset, btn_y, btn_w, btn_h);
+        let reset_btn = Button::new(
+            "Reset",
+            Rect::new(board_x + btn_x_offset, btn_y, btn_w, btn_h),
+            ButtonColor::Yellow,
+        );
         let mut next_btn = Button::new(
             "Next",
-            board_x + (0.5 * board_width) + btn_x_offset,
-            btn_y,
-            btn_w,
-            btn_h,
+            Rect::new(
+                board_x + (0.5 * board_width) + btn_x_offset,
+                btn_y,
+                btn_w,
+                btn_h,
+            ),
+            ButtonColor::Green,
         );
 
         next_btn.is_active = false;
