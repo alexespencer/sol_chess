@@ -1,3 +1,0 @@
-rm -rf ./local-deploy/sol_chess.wasm
-rm -rf ./sol_chess.tar.gz
-rm -rf ./target
