@@ -14,6 +14,7 @@ pub enum ButtonColor {
     Grey,
     Green,
     Red,
+    Blue,
 }
 
 impl ButtonColor {
@@ -22,6 +23,7 @@ impl ButtonColor {
             ButtonColor::Grey => Color::from_rgba(140, 140, 140, 200),
             ButtonColor::Green => Color::from_rgba(112, 140, 141, 200),
             ButtonColor::Red => Color::from_rgba(123, 70, 85, 200),
+            ButtonColor::Blue => Color::from_rgba(140, 120, 250, 200),
         }
     }
 

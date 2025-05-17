@@ -377,30 +377,35 @@ impl Game {
 
         let easy_btn = Button::new(
             "Easy",
-            Rect::new((board_x - btn_w) / 2., (board_y + btn_h) / 2., btn_w, btn_h),
-            ButtonColor::Grey,
+            Rect::new(
+                (board_x - btn_w) / 2.,
+                board_y + (self.square_width - btn_h) / 2.,
+                btn_w,
+                btn_h,
+            ),
+            ButtonColor::Blue,
         );
 
         let medium_btn = Button::new(
             "Medium",
             Rect::new(
                 (board_x - btn_w) / 2.,
-                (board_y + board_width) / 2.,
+                board_y + self.square_width + (self.square_width - btn_h) / 2.,
                 btn_w,
                 btn_h,
             ),
-            ButtonColor::Grey,
+            ButtonColor::Blue,
         );
 
         let hard_button = Button::new(
             "Hard",
             Rect::new(
                 (board_x - btn_w) / 2.,
-                (board_y + board_width),
+                board_y + 2. * self.square_width + (self.square_width - btn_h) / 2.,
                 btn_w,
                 btn_h,
             ),
-            ButtonColor::Grey,
+            ButtonColor::Blue,
         );
 
         self.mode_btns = HashMap::new();
