@@ -19,11 +19,12 @@ get_parameter() {
   fi
 }
 
-# Usage:   sol_chess_build_web  debug|release   target_dir               [archive_dir]
-#                               Build profile   location to place files  location to place compressed archive
-sol_chess_build_web() {
+# Usage:   build_web  debug|release   target_dir               [archive_dir]
+#                     Build profile   location to place files  location to place compressed archive
+build_web() {
   rootd
 
+  local BINARY_NAME="sol_chess"
   local BUILD_PROFILE="debug"
   local BUILD_PROFILE_SWITCH=""
   if [ -n "${1}" ]; then
@@ -49,14 +50,14 @@ sol_chess_build_web() {
       return 1
   fi
 
-  rm -rf ${TARGET_DIR} && mkdir -p ${TARGET_DIR} && mv ./target/wasm32-unknown-unknown/${BUILD_PROFILE}/sol_chess.wasm ${TARGET_DIR}/sol_chess.wasm && cp ./tools/web/index.html ${TARGET_DIR}/index.html
+  rm -rf ${TARGET_DIR} && mkdir -p ${TARGET_DIR} && mv ./target/wasm32-unknown-unknown/${BUILD_PROFILE}/${BINARY_NAME}.wasm ${TARGET_DIR}/${BINARY_NAME}.wasm && cp ./tools/web/index.html ${TARGET_DIR}/index.html
   if [ $? -ne 0 ]; then
       echo "Failed to assemble the build in ${TARGET_DIR}"
       return 1
   fi
 
   if [ -n "${ARCHIVE_DIR}" ]; then
-    local TAR_NAME="${ARCHIVE_DIR}/sol_chess.tar.gz"
+    local TAR_NAME="${ARCHIVE_DIR}/${BINARY_NAME}.tar.gz"
     set -x
     tar -czvf ${TAR_NAME} -C ${TARGET_DIR} . && echo "Created ${TAR_NAME}"
     set +x
@@ -65,12 +66,12 @@ sol_chess_build_web() {
   restored
 }
 
-sol_chess_web_local() {
+run_web() {
   rootd
 
   local TARGET_DIR=$(get_parameter "./target/dist" ${1})
   echo "Building web app in ${TARGET_DIR}"
-  sol_chess_build_web "debug" $TARGET_DIR
+  build_web "debug" $TARGET_DIR
   if [ $? -ne 0 ]; then
       echo "Failed to build the web app"
       return 1
@@ -81,7 +82,7 @@ sol_chess_web_local() {
   restored
 }
 
-sol_chess_dev() {
+run_dev() {
   rootd
 
   TESTING=1 cargo run
@@ -89,11 +90,12 @@ sol_chess_dev() {
   restored
 }
 
-sol_chess_deploy() {
+deploy() {
   rootd
 
+  local BINARY_NAME="sol_chess"
   if [ $# -ne 1 ]; then
-    echo "Usage: sol_chess_deploy <serve_root>"
+    echo "Usage: deploy <serve_root>"
     return 1
   fi
 
@@ -103,21 +105,21 @@ sol_chess_deploy() {
   fi
 
   local serve_root=$1
-  sol_chess_build_web "release" "./target/dist" "./target"
+  build_web "release" "./target/dist" "./target"
   if [ $? -ne 0 ]; then
       echo "Failed to build the web app"
       return 1
   fi
 
-  sudo mv ./target/sol_chess.tar.gz $serve_root/sol_chess.tar.gz && \
-  sudo tar -xzvf $serve_root/sol_chess.tar.gz -C $serve_root && \
-  sudo rm $serve_root/sol_chess.tar.gz
+  sudo mv ./target/${BINARY_NAME}.tar.gz $serve_root/${BINARY_NAME}.tar.gz && \
+  sudo tar -xzvf $serve_root/${BINARY_NAME}.tar.gz -C $serve_root && \
+  sudo rm $serve_root/${BINARY_NAME}.tar.gz
   echo "Deployment complete"
 
   restored
 }
 
-sol_chess_clean() {
+clean() {
   rootd
 
   rm -rf ./target
