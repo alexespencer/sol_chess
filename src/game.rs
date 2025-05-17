@@ -101,8 +101,8 @@ impl Game {
     }
 
     pub fn update_window_size(&mut self) {
-        let new_height = math::clamp(screen_height(), 100.0, 800.0);
-        let new_width = math::clamp(screen_width(), 100.0, 1000.0);
+        let new_height = math::clamp(screen_height(), 100.0, 10000.0);
+        let new_width = math::clamp(screen_width(), 100.0, 10000.0);
         if new_height == self.window_height && new_width == self.window_width {
             return;
         }
@@ -175,10 +175,12 @@ impl Game {
     }
 
     fn draw_heading(&self) {
+        let f = self.heading_font_size.floor() as u16;
+        let dims = measure_text(self.heading_text.as_str(), None, f, 1.0);
         draw_text(
             self.heading_text.as_str(),
             self.heading_rect.x,
-            self.heading_rect.y,
+            self.heading_rect.y + dims.offset_y,
             self.heading_font_size,
             BLACK,
         );
@@ -268,18 +270,18 @@ impl Game {
     }
 
     fn update_drawables(&mut self) {
-        self.square_width = 0.15 * self.window_width;
-
-        let board_x = (self.window_width - (self.square_width * self.num_squares as f32)) / 2.0;
-        let board_y = (self.window_height - (self.square_width * self.num_squares as f32)) / 2.0;
+        let min_dimension = f32::min(self.window_height, self.window_width);
+        self.square_width = 0.15 * min_dimension;
         let board_width = self.square_width * self.num_squares as f32;
+        let board_x = (self.window_width - board_width) / 2.0;
+        let board_y = (self.window_height - board_width) / 2.0;
 
-        self.heading_font_size = 0.07 * self.window_width;
+        self.heading_font_size = 0.07 * min_dimension;
         let f = self.heading_font_size.floor() as u16;
         let dims = measure_text(self.heading_text.as_str(), None, f, 1.0);
         self.heading_rect = Rect::new(
             board_x + (board_width - dims.width) / 2.0,
-            0.85 * board_y,
+            (board_y - dims.height) / 2.0,
             dims.width,
             dims.height,
         );

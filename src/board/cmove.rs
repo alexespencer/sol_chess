@@ -21,7 +21,7 @@ impl CMove {
             from,
             to_piece,
             to,
-            disambig
+            disambig,
         }
     }
 
