@@ -13,7 +13,7 @@ pub struct Button {
 pub enum ButtonColor {
     Grey,
     Green,
-    Yellow,
+    Red,
 }
 
 impl ButtonColor {
@@ -21,7 +21,7 @@ impl ButtonColor {
         match self {
             ButtonColor::Grey => Color::from_rgba(140, 140, 140, 200),
             ButtonColor::Green => Color::from_rgba(112, 140, 141, 200),
-            ButtonColor::Yellow => Color::from_rgba(123, 70, 85, 200),
+            ButtonColor::Red => Color::from_rgba(123, 70, 85, 200),
         }
     }
 

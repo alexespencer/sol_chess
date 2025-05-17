@@ -31,12 +31,12 @@ pub struct Game {
     // Constants througout the game
     texture_res: Texture2D,
     num_squares: usize,
-    heading_font_size: f32,
     heading_text: String,
 
     // Update below on handle input
     state: GameState,
     debug: bool,
+    game_mode: GameMode,
 
     // Update below on window resize
     // Used for drawing the state
@@ -45,7 +45,9 @@ pub struct Game {
     window_width: f32,
     squares: Vec<GameSquare>,
     heading_rect: Rect,
-    btns: HashMap<ButtonAction, Button>,
+    heading_font_size: f32,
+    gp_btns: HashMap<ButtonAction, Button>,
+    mode_btns: HashMap<GameMode, Button>,
 }
 
 struct GameSquare {
@@ -64,6 +66,13 @@ pub enum ButtonAction {
     Next,
 }
 
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+pub enum GameMode {
+    Easy,
+    Medium,
+    Hard,
+}
+
 #[derive(Copy, Clone)]
 enum GameState {
     SelectSource(Option<(usize, usize)>),
@@ -72,8 +81,10 @@ enum GameState {
 }
 
 impl Game {
-    pub fn new(board: Board, texture_res: Texture2D) -> Self {
+    pub fn new(texture_res: Texture2D) -> Self {
         let num_squares: usize = 4;
+        let game_mode = GameMode::Medium;
+        let board = Game::generate_puzzle(game_mode);
 
         Self {
             original_board: board.clone(),
@@ -85,24 +96,27 @@ impl Game {
             num_squares,
             texture_res,
             state: GameState::SelectSource(None),
+            game_mode,
             debug: false,
-            btns: HashMap::new(),
+            gp_btns: HashMap::new(),
+            mode_btns: HashMap::new(),
             window_height: 0.,
             window_width: 0.,
             square_width: 0.,
         }
     }
 
-    pub fn draw(&self) {
+    pub fn draw(&mut self) {
+        self.update_window_size();
         self.draw_heading();
         self.draw_board();
         self.draw_buttons();
         self.draw_debug();
     }
 
-    pub fn update_window_size(&mut self) {
-        let new_height = math::clamp(screen_height(), 100.0, 10000.0);
-        let new_width = math::clamp(screen_width(), 100.0, 10000.0);
+    fn update_window_size(&mut self) {
+        let new_height = math::clamp(screen_height(), 200.0, 10000.0);
+        let new_width = math::clamp(screen_width(), 200.0, 10000.0);
         if new_height == self.window_height && new_width == self.window_width {
             return;
         }
@@ -114,7 +128,7 @@ impl Game {
 
     pub fn handle_input(&mut self) {
         let mut btn_clicked = None;
-        for btn in &mut self.btns {
+        for btn in &mut self.gp_btns {
             btn.1.handle_input();
             if btn.1.is_clicked() {
                 btn_clicked = Some(btn.0.clone());
@@ -126,6 +140,23 @@ impl Game {
             match action {
                 ButtonAction::Reset => self.reset(),
                 ButtonAction::Next => self.next_puzzle(),
+            }
+        } else {
+            for btn in &mut self.mode_btns {
+                btn.1.handle_input();
+                if btn.1.is_clicked() {
+                    self.game_mode = *btn.0;
+                    self.next_puzzle();
+                    break;
+                }
+            }
+        }
+
+        for btn in &mut self.mode_btns {
+            if self.game_mode == *btn.0 {
+                btn.1.is_active = false;
+            } else {
+                btn.1.is_active = true;
             }
         }
 
@@ -238,7 +269,11 @@ impl Game {
     }
 
     fn draw_buttons(&self) {
-        for btn in &self.btns {
+        for btn in &self.gp_btns {
+            btn.1.draw();
+        }
+
+        for btn in &self.mode_btns {
             btn.1.draw();
         }
     }
@@ -313,7 +348,7 @@ impl Game {
 
         self.squares = rects;
 
-        let btn_h = 0.08 * self.window_height;
+        let btn_h = 0.08 * min_dimension;
         let btn_w = board_width * 0.2;
 
         let btn_y = board_width + board_y + 0.3 * self.square_width;
@@ -321,7 +356,7 @@ impl Game {
         let reset_btn = Button::new(
             "Reset",
             Rect::new(board_x + btn_x_offset, btn_y, btn_w, btn_h),
-            ButtonColor::Yellow,
+            ButtonColor::Red,
         );
         let mut next_btn = Button::new(
             "Next",
@@ -336,9 +371,49 @@ impl Game {
 
         next_btn.is_active = false;
 
-        self.btns = HashMap::new();
-        self.btns.insert(ButtonAction::Next, next_btn);
-        self.btns.insert(ButtonAction::Reset, reset_btn);
+        self.gp_btns = HashMap::new();
+        self.gp_btns.insert(ButtonAction::Next, next_btn);
+        self.gp_btns.insert(ButtonAction::Reset, reset_btn);
+
+        let easy_btn = Button::new(
+            "Easy",
+            Rect::new((board_x - btn_w) / 2., (board_y + btn_h) / 2., btn_w, btn_h),
+            ButtonColor::Grey,
+        );
+
+        let medium_btn = Button::new(
+            "Medium",
+            Rect::new(
+                (board_x - btn_w) / 2.,
+                (board_y + board_width) / 2.,
+                btn_w,
+                btn_h,
+            ),
+            ButtonColor::Grey,
+        );
+
+        let hard_button = Button::new(
+            "Hard",
+            Rect::new(
+                (board_x - btn_w) / 2.,
+                (board_y + board_width),
+                btn_w,
+                btn_h,
+            ),
+            ButtonColor::Grey,
+        );
+
+        self.mode_btns = HashMap::new();
+        self.mode_btns.insert(GameMode::Easy, easy_btn);
+        self.mode_btns.insert(GameMode::Medium, medium_btn);
+        self.mode_btns.insert(GameMode::Hard, hard_button);
+
+        for btn in &mut self.mode_btns {
+            btn.1.is_active = true;
+            if self.game_mode == *btn.0 {
+                btn.1.is_active = false;
+            }
+        }
     }
 
     fn handle_select_source(
@@ -428,7 +503,7 @@ impl Game {
                 self.reset_squares();
                 if self.board.game_state == BoardState::Won {
                     let next_btn = self
-                        .btns
+                        .gp_btns
                         .get_mut(&ButtonAction::Next)
                         .expect("Cannot find next button");
                     next_btn.is_active = true;
@@ -451,7 +526,7 @@ impl Game {
         self.reset_squares();
 
         let next_button = self
-            .btns
+            .gp_btns
             .get_mut(&ButtonAction::Next)
             .expect("Cannot find next button");
         next_button.is_active = false;
@@ -461,8 +536,7 @@ impl Game {
 
     fn next_puzzle(&mut self) {
         self.reset();
-        let generate = generator::generate(6, 100, &MacroquadRandAdapter);
-        let board = generate.board().expect("No puzzle was generated");
+        let board = Game::generate_puzzle(self.game_mode);
         self.original_board = board.clone();
         self.board = board;
     }
@@ -493,6 +567,17 @@ impl Game {
             20.0,
             BLACK,
         );
+    }
+
+    fn generate_puzzle(mode: GameMode) -> Board {
+        let piece_count = match mode {
+            GameMode::Easy => 3,
+            GameMode::Medium => 5,
+            GameMode::Hard => 7,
+        };
+
+        let generate = generator::generate(piece_count, 100, &MacroquadRandAdapter);
+        generate.board().expect("No puzzle was generated")
     }
 }
 
