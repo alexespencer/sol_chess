@@ -3,8 +3,10 @@ use std::{
     fmt::{self, Display, Formatter},
 };
 
-use button::{Button, ButtonColor};
+use button::Button;
+use color::UiColor;
 use macroquad::{math, prelude::*, rand};
+use shadow::draw_shadow;
 use sol_chess::{
     board::{Board, BoardState},
     generator::{self, RandomRange},
@@ -12,6 +14,8 @@ use sol_chess::{
 use texture::PieceTexture;
 
 pub mod button;
+pub mod color;
+pub mod shadow;
 pub mod texture;
 
 pub struct MacroquadRandAdapter;
@@ -43,11 +47,14 @@ pub struct Game {
     square_width: f32,
     window_height: f32,
     window_width: f32,
+    board_rect: Rect,
     squares: Vec<GameSquare>,
     heading_rect: Rect,
     heading_font_size: f32,
     gp_btns: HashMap<ButtonAction, Button>,
     mode_btns: HashMap<GameMode, Button>,
+    rules: bool,
+    rules_btn: Vec<Button>,
 }
 
 struct GameSquare {
@@ -89,6 +96,7 @@ impl Game {
         Self {
             original_board: board.clone(),
             board,
+            board_rect: Rect::new(0., 0., 0., 0.),
             squares: Vec::new(),
             heading_rect: Rect::new(0., 0., 0., 0.),
             heading_text: "Solitaire Chess".to_string(),
@@ -100,6 +108,8 @@ impl Game {
             debug: false,
             gp_btns: HashMap::new(),
             mode_btns: HashMap::new(),
+            rules: false,
+            rules_btn: Vec::new(),
             window_height: 0.,
             window_width: 0.,
             square_width: 0.,
@@ -127,27 +137,52 @@ impl Game {
     }
 
     pub fn handle_input(&mut self) {
-        let mut btn_clicked = None;
+        let mut gp_btn_clicked = None;
         for btn in &mut self.gp_btns {
             btn.1.handle_input();
             if btn.1.is_clicked() {
-                btn_clicked = Some(btn.0.clone());
+                gp_btn_clicked = Some(btn.0.clone());
                 break;
             }
         }
 
-        if let Some(action) = btn_clicked {
+        if let Some(action) = gp_btn_clicked {
             match action {
                 ButtonAction::Reset => self.reset(),
                 ButtonAction::Next => self.next_puzzle(),
             }
         } else {
+            let mut mode_btn_clicked = None;
             for btn in &mut self.mode_btns {
                 btn.1.handle_input();
                 if btn.1.is_clicked() {
-                    self.game_mode = *btn.0;
-                    self.next_puzzle();
+                    mode_btn_clicked = Some(btn);
                     break;
+                }
+            }
+
+            if let Some(btn) = mode_btn_clicked {
+                self.game_mode = *btn.0;
+                self.next_puzzle();
+            } else {
+                let mut rules_btn_clicked = false;
+                for btn in &mut self.rules_btn {
+                    btn.handle_input();
+                    if btn.is_clicked() {
+                        rules_btn_clicked = true;
+                        break;
+                    }
+                }
+
+                if rules_btn_clicked {
+                    self.rules = !self.rules;
+                    if self.rules {
+                        self.rules_btn[0].text = "Close".to_string();
+                        self.rules_btn[0].color = UiColor::Green;
+                    } else {
+                        self.rules_btn[0].text = "Rules".to_string();
+                        self.rules_btn[0].color = UiColor::Brown;
+                    }
                 }
             }
         }
@@ -158,6 +193,11 @@ impl Game {
             } else {
                 btn.1.is_active = true;
             }
+        }
+
+        if is_key_released(KeyCode::Escape) {
+            self.rules = false;
+            return;
         }
 
         if is_key_released(KeyCode::D) {
@@ -218,15 +258,45 @@ impl Game {
     }
 
     fn draw_board(&self) {
+        let board_shadow_width = 0.1 * self.square_width;
+        draw_shadow(self.board_rect, board_shadow_width);
+
+        if self.rules {
+            draw_rectangle(
+                self.board_rect.x,
+                self.board_rect.y,
+                self.board_rect.w,
+                self.board_rect.h,
+                UiColor::Brown.to_bg_color(),
+            );
+
+            let font_size = self.heading_font_size * 0.8;
+            let rules = "\
+                Every move should be a \n\
+                capture. Win when only \n\
+                one piece is left.\n";
+            let measurement = measure_text(rules, None, font_size as u16, 1.0);
+            draw_multiline_text(
+                rules,
+                self.board_rect.x + 0.05 * self.square_width,
+                self.board_rect.y + 0.5 * (self.board_rect.h - measurement.height)
+                    - 2. * measurement.offset_y,
+                font_size,
+                Some(2.),
+                UiColor::Brown.to_fg_color(),
+            );
+            return;
+        }
+
         let sprite_size = 0.8 * self.square_width;
         let mut selected_square = None;
         self.squares.iter().for_each(|square| {
-            let color = if square.is_source {
-                Color::from_rgba(112, 105, 141, 255)
-            } else if square.is_target {
-                Color::from_rgba(112, 150, 141, 255)
-            } else {
-                square.color
+            let color = match square.is_source {
+                true => square.color,
+                false => match square.is_target {
+                    true => UiColor::Pink.to_shadow_color(),
+                    false => square.color,
+                },
             };
 
             draw_rectangle(
@@ -276,6 +346,10 @@ impl Game {
         for btn in &self.mode_btns {
             btn.1.draw();
         }
+
+        for btn in &self.rules_btn {
+            btn.draw();
+        }
     }
 
     fn draw_debug(&self) {
@@ -310,6 +384,7 @@ impl Game {
         let board_width = self.square_width * self.num_squares as f32;
         let board_x = (self.window_width - board_width) / 2.0;
         let board_y = (self.window_height - board_width) / 2.0;
+        self.board_rect = Rect::new(board_x, board_y, board_width, board_width);
 
         self.heading_font_size = 0.07 * min_dimension;
         let f = self.heading_font_size.floor() as u16;
@@ -321,8 +396,8 @@ impl Game {
             dims.height,
         );
 
-        let dark = Color::from_rgba(83, 104, 120, 255);
-        let light = Color::from_rgba(190, 190, 190, 255);
+        let dark = UiColor::Brown.to_bg_color();
+        let light = UiColor::Yellow.to_bg_color();
         let mut rects = Vec::new();
         for i in 0..self.num_squares {
             for j in 0..self.num_squares {
@@ -356,7 +431,7 @@ impl Game {
         let reset_btn = Button::new(
             "Reset",
             Rect::new(board_x + btn_x_offset, btn_y, btn_w, btn_h),
-            ButtonColor::Red,
+            UiColor::Yellow,
         );
         let mut next_btn = Button::new(
             "Next",
@@ -366,10 +441,21 @@ impl Game {
                 btn_w,
                 btn_h,
             ),
-            ButtonColor::Green,
+            UiColor::Green,
         );
-
         next_btn.is_active = false;
+
+        let rules_button = Button::new(
+            "Rules",
+            Rect::new(
+                (board_x - btn_w) / 2.,
+                board_y + (self.square_width - btn_h) / 2.,
+                btn_w,
+                btn_h,
+            ),
+            UiColor::Brown,
+        );
+        self.rules_btn = vec![rules_button];
 
         self.gp_btns = HashMap::new();
         self.gp_btns.insert(ButtonAction::Next, next_btn);
@@ -379,33 +465,33 @@ impl Game {
             "Easy",
             Rect::new(
                 (board_x - btn_w) / 2.,
-                board_y + (self.square_width - btn_h) / 2.,
+                board_y + self.square_width + (self.square_width - btn_h) / 2.,
                 btn_w,
                 btn_h,
             ),
-            ButtonColor::Blue,
+            UiColor::Yellow,
         );
 
         let medium_btn = Button::new(
             "Medium",
             Rect::new(
                 (board_x - btn_w) / 2.,
-                board_y + self.square_width + (self.square_width - btn_h) / 2.,
+                board_y + 2. * self.square_width + (self.square_width - btn_h) / 2.,
                 btn_w,
                 btn_h,
             ),
-            ButtonColor::Blue,
+            UiColor::Yellow,
         );
 
         let hard_button = Button::new(
             "Hard",
             Rect::new(
                 (board_x - btn_w) / 2.,
-                board_y + 2. * self.square_width + (self.square_width - btn_h) / 2.,
+                board_y + 3. * self.square_width + (self.square_width - btn_h) / 2.,
                 btn_w,
                 btn_h,
             ),
-            ButtonColor::Blue,
+            UiColor::Yellow,
         );
 
         self.mode_btns = HashMap::new();
