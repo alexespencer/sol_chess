@@ -5,17 +5,19 @@ use std::{
 
 use button::Button;
 use color::UiColor;
-use macroquad::{math, prelude::*, rand};
+use macroquad::{audio, math, prelude::*, rand};
 use shadow::draw_shadow;
 use sol_chess::{
     board::{Board, BoardState},
     generator::{self, RandomRange},
 };
+use sound::Sounds;
 use texture::PieceTexture;
 
 pub mod button;
 pub mod color;
 pub mod shadow;
+pub mod sound;
 pub mod texture;
 
 pub struct MacroquadRandAdapter;
@@ -34,6 +36,7 @@ pub struct Game {
 
     // Constants througout the game
     texture_res: Texture2D,
+    sounds: Sounds,
     num_squares: usize,
     heading_text: String,
 
@@ -88,7 +91,7 @@ enum GameState {
 }
 
 impl Game {
-    pub fn new(texture_res: Texture2D) -> Self {
+    pub fn new(texture_res: Texture2D, sounds: Sounds) -> Self {
         let num_squares: usize = 4;
         let game_mode = GameMode::Medium;
         let board = Game::generate_puzzle(game_mode);
@@ -103,6 +106,7 @@ impl Game {
             heading_font_size: 0.,
             num_squares,
             texture_res,
+            sounds,
             state: GameState::SelectSource(None),
             game_mode,
             debug: false,
@@ -432,6 +436,7 @@ impl Game {
             "Reset",
             Rect::new(board_x + btn_x_offset, btn_y, btn_w, btn_h),
             UiColor::Yellow,
+            self.sounds.button.clone(),
         );
         let mut next_btn = Button::new(
             "Next",
@@ -442,6 +447,7 @@ impl Game {
                 btn_h,
             ),
             UiColor::Green,
+            self.sounds.button.clone(),
         );
         next_btn.is_active = false;
 
@@ -454,6 +460,7 @@ impl Game {
                 btn_h,
             ),
             UiColor::Brown,
+            self.sounds.button.clone(),
         );
         self.rules_btn = vec![rules_button];
 
@@ -470,6 +477,7 @@ impl Game {
                 btn_h,
             ),
             UiColor::Yellow,
+            self.sounds.mode.clone(),
         );
 
         let medium_btn = Button::new(
@@ -481,6 +489,7 @@ impl Game {
                 btn_h,
             ),
             UiColor::Yellow,
+            self.sounds.mode.clone(),
         );
 
         let hard_button = Button::new(
@@ -492,6 +501,7 @@ impl Game {
                 btn_h,
             ),
             UiColor::Yellow,
+            self.sounds.mode.clone(),
         );
 
         self.mode_btns = HashMap::new();
@@ -586,7 +596,6 @@ impl Game {
             });
 
             let m = m.expect("legal move should be found");
-
             self.board.make_move(m.clone());
 
             if self.board.game_state == BoardState::Won || self.board.game_state == BoardState::Lost
@@ -598,6 +607,9 @@ impl Game {
                         .get_mut(&ButtonAction::Next)
                         .expect("Cannot find next button");
                     next_btn.is_active = true;
+                    audio::play_sound_once(&self.sounds.win);
+                } else {
+                    audio::play_sound_once(&self.sounds.loss);
                 }
 
                 return GameState::GameOver((x, y));
@@ -605,6 +617,7 @@ impl Game {
 
             self.reset_squares();
             self.get(x, y).is_target = true;
+            audio::play_sound_once(&self.sounds.click);
             return GameState::SelectSource(Some((x, y)));
         }
 

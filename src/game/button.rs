@@ -1,4 +1,4 @@
-use macroquad::prelude::*;
+use macroquad::{audio::{self, Sound}, prelude::*};
 
 use super::{color::UiColor, shadow::draw_shadow};
 
@@ -10,10 +10,11 @@ pub struct Button {
     rect: Rect,
     shadow_width: f32,
     pub color: UiColor,
+    sound: Sound,
 }
 
 impl Button {
-    pub fn new(text: &str, rect: Rect, color: UiColor) -> Self {
+    pub fn new(text: &str, rect: Rect, color: UiColor, sound: Sound) -> Self {
         Self {
             text: text.to_string(),
             is_down: false,
@@ -22,6 +23,7 @@ impl Button {
             rect,
             shadow_width: 5.0,
             color,
+            sound,
         }
     }
 
@@ -117,6 +119,7 @@ impl Button {
         if is_mouse_button_released(MouseButton::Left) {
             if c.overlaps_rect(&self.rect) {
                 self.is_clicked = true;
+                audio::play_sound_once(&self.sound);
                 self.is_down = false;
                 return;
             }
