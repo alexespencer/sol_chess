@@ -6,14 +6,10 @@ pub struct CMove {
     pub from: Square,
     pub to_piece: Piece,
     pub to: Square,
-
-    // Used to disambiguate when looking at notation
-    disambig: String,
 }
 
 impl CMove {
     pub fn new(from: Square, to: Square) -> Self {
-        let disambig = String::from("");
         let from_piece = from.piece.expect("Trying to move a blank");
         let to_piece = to.piece.expect("Trying to capture a blank");
         CMove {
@@ -21,7 +17,6 @@ impl CMove {
             from,
             to_piece,
             to,
-            disambig,
         }
     }
 
@@ -30,11 +25,6 @@ impl CMove {
             Piece::Pawn => self.from.file_notation(),
             p => p.notation(),
         };
-        format!(
-            "{}{}x{}",
-            piece_qualifier,
-            self.disambig,
-            self.to.notation()
-        )
+        format!("{}x{}", piece_qualifier, self.to.notation())
     }
 }
