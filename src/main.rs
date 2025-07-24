@@ -1,8 +1,6 @@
-use game::{sound::Sounds, Game};
 use macroquad::{audio, prelude::*};
 use miniquad::date;
-
-mod game;
+use sol_chess::game::{Game, sound::Sounds};
 
 fn window_conf() -> Conf {
     let window_name = match std::env::var("TESTING") {
@@ -48,7 +46,13 @@ async fn init() -> Game {
     let loss = load_sound!("../assets/loss.wav");
     let button = load_sound!("../assets/button.wav");
     let mode = load_sound!("../assets/mode.wav");
-    let sounds = Sounds { click, win, loss, button, mode };
+    let sounds = Sounds {
+        click,
+        win,
+        loss,
+        button,
+        mode,
+    };
     let game = Game::new(texture_res, sounds);
     game
 }

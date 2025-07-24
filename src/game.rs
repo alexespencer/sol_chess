@@ -7,12 +7,13 @@ use button::Button;
 use color::UiColor;
 use macroquad::{audio, math, prelude::*, rand};
 use shadow::draw_shadow;
-use sol_chess::{
+use sound::Sounds;
+
+use crate::{
     board::{Board, BoardState},
+    game::texture::Texture,
     generator::{self, RandomRange},
 };
-use sound::Sounds;
-use texture::PieceTexture;
 
 pub mod button;
 pub mod color;
@@ -313,7 +314,7 @@ impl Game {
 
             if let Some(p) = &self.board.cells[square.i][square.j] {
                 let offset = (square.rect.w - sprite_size) / 2.0;
-                let dtp = PieceTexture::for_piece(*p, sprite_size);
+                let dtp = p.texture(sprite_size);
                 if !square.is_source {
                     draw_texture_ex(
                         &self.texture_res,
@@ -330,7 +331,7 @@ impl Game {
 
         if let Some(selected_square) = selected_square {
             if let Some(p) = self.board.cells[selected_square.i][selected_square.j] {
-                let dtp = PieceTexture::for_piece(p, sprite_size);
+                let dtp = p.texture(sprite_size);
                 draw_texture_ex(
                     &self.texture_res,
                     mouse_position().0 - sprite_size / 2.0,
