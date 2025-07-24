@@ -2,11 +2,13 @@ use macroquad::prelude::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UiColor {
+    #[allow(dead_code)]
     Grey,
     Green,
     Pink,
     Brown,
     Yellow,
+    #[allow(dead_code)]
     Blue,
 }
 

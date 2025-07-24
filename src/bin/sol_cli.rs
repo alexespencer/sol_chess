@@ -73,10 +73,10 @@ fn generate_puzzle(num_pieces: Option<u32>, num_solutions: Option<u32>) -> Optio
         "Generating a puzzle with {} pieces with a maximum of {} solutions",
         num_pieces, num_solutions
     );
-    let gen = generator::generate(num_pieces, num_solutions, &MacroquadRngTodo);
-    gen.print_stats();
+    let generator = generator::generate(num_pieces, num_solutions, &MacroquadRngTodo);
+    generator.print_stats();
 
-    let Some(board) = gen.board() else {
+    let Some(board) = generator.board() else {
         println!("Failed to generate a puzzle, try again");
         return None;
     };
