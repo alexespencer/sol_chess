@@ -342,7 +342,7 @@ fn get_square_for_display(piece: &Option<Piece>, pretty: bool) -> String {
         if pretty {
             piece.pretty()
         } else {
-            piece.notation()
+            piece.to_string()
         }
     } else {
         ".".to_string()
@@ -379,9 +379,7 @@ mod tests {
     }
 
     macro_rules! mv {
-        ($from:literal, $to:literal) => {{
-            CMove::new(sq!($from), sq!($to))
-        }};
+        ($from:literal, $to:literal) => {{ CMove::new(sq!($from), sq!($to)) }};
     }
 
     macro_rules! validate_board {

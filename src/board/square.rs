@@ -30,7 +30,10 @@ impl Square {
     pub fn parse(notation: &str) -> Self {
         let mut chars = notation.chars();
         let piece = chars.next().expect("Piece missing");
-        let piece = Piece::parse(&piece.to_string());
+        let piece = match piece {
+            '.' => None,
+            c => Piece::try_from(c.to_string().as_str()).ok(),
+        };
         let file = chars.next().expect("File missing");
         let file = match file {
             'a' => 0,
@@ -73,7 +76,7 @@ impl Square {
         if self.piece.is_none() {
             "".to_string()
         } else {
-            self.piece.unwrap().notation()
+            self.piece.unwrap().to_string()
         }
     }
 }

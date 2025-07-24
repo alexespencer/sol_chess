@@ -23,7 +23,7 @@ impl CMove {
     pub fn notation(&self) -> String {
         let piece_qualifier = match &self.from_piece {
             Piece::Pawn => self.from.file_notation(),
-            p => p.notation(),
+            p => p.to_string(),
         };
         format!("{}x{}", piece_qualifier, self.to.notation())
     }
