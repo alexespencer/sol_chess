@@ -4,22 +4,18 @@ use core::fmt;
 
 #[derive(Clone, Eq, Hash, PartialEq)]
 pub struct Square {
-    pub file: usize,
-    pub rank: usize,
+    pub file: u8,
+    pub rank: u8,
     pub piece: Option<Piece>,
 }
 
 pub struct SquarePair {
     pub start: Square,
     pub end: Square,
-    // pub dx: isize,
-    // pub dy: usize,
-    // pub x_dir: i8,
-    // pub y_dir: i8,
 }
 
 impl Square {
-    pub fn new(file: usize, rank: usize, piece: Option<Piece>) -> Self {
+    pub fn new(file: u8, rank: u8, piece: Option<Piece>) -> Self {
         Square { file, rank, piece }
     }
 
@@ -39,7 +35,7 @@ impl Square {
             _ => panic!("file should be between a-d"),
         };
 
-        let rank = chars.next().unwrap().to_digit(10).expect("rank missing") as usize;
+        let rank = chars.next().unwrap().to_digit(10).expect("rank missing") as u8;
         if rank < 1 || rank > BOARD_SIZE {
             panic!("rank should be between 1-{}", BOARD_SIZE);
         }
@@ -48,7 +44,7 @@ impl Square {
     }
 
     pub fn file_notation(&self) -> String {
-        String::from("abcd".chars().nth(self.file).unwrap())
+        String::from("abcd".chars().nth(self.file as usize).unwrap())
     }
 
     pub fn rank_notation(&self) -> String {

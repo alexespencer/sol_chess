@@ -19,7 +19,7 @@ use square::{Square, SquarePair};
 
 #[derive(Clone)]
 pub struct Board {
-    pub cells: [[Option<Piece>; BOARD_SIZE]; BOARD_SIZE],
+    pub cells: [[Option<Piece>; BOARD_SIZE as usize]; BOARD_SIZE as usize],
     pub legal_moves: HashSet<CMove>,
     pub game_state: BoardState,
     pieces_remaining: u8,
@@ -36,7 +36,7 @@ pub enum BoardState {
 impl Board {
     pub fn new() -> Self {
         Board {
-            cells: [[None; BOARD_SIZE]; BOARD_SIZE],
+            cells: [[None; BOARD_SIZE as usize]; BOARD_SIZE as usize],
             legal_moves: HashSet::new(),
             pieces_remaining: 0,
             game_state: BoardState::NotStarted,
@@ -88,7 +88,10 @@ impl Board {
 
     pub fn set(&mut self, square: Square) -> Option<Piece> {
         let new_is_occuppied = square.piece.is_some();
-        let existing = mem::replace(&mut self.cells[square.file][square.rank], square.piece);
+        let existing = mem::replace(
+            &mut self.cells[square.file as usize][square.rank as usize],
+            square.piece,
+        );
 
         // If placing a piece on a blank, increment piece count
         if existing.is_none() && new_is_occuppied {
@@ -114,8 +117,11 @@ impl Board {
             return None;
         }
 
-        let from_piece = mem::replace(&mut self.cells[mv.from.file][mv.from.rank], None);
-        self.cells[mv.to.file][mv.to.rank] = from_piece;
+        let from_piece = mem::replace(
+            &mut self.cells[mv.from.file as usize][mv.from.rank as usize],
+            None,
+        );
+        self.cells[mv.to.file as usize][mv.to.rank as usize] = from_piece;
 
         self.pieces_remaining -= 1;
         self.board_state_changed();
@@ -126,7 +132,7 @@ impl Board {
         let mut empty_squares = Vec::new();
         for file in 0..BOARD_SIZE {
             for rank in 0..BOARD_SIZE {
-                if self.cells[file][rank].is_none() {
+                if self.cells[file as usize][rank as usize].is_none() {
                     empty_squares.push(Square::new(file, rank, None));
                 }
             }
@@ -145,7 +151,7 @@ impl Board {
         for i in 0..BOARD_SIZE {
             for j in 0..BOARD_SIZE {
                 res = res << 3;
-                let byte = Board::get_piece_encoding(self.cells[i][j]);
+                let byte = Board::get_piece_encoding(self.cells[i as usize][j as usize]);
                 res = res | byte as u128
             }
         }
@@ -158,7 +164,7 @@ impl Board {
         for rank in 0..BOARD_SIZE {
             let mut row = String::new();
             for file in 0..BOARD_SIZE {
-                let piece = self.cells[file][rank];
+                let piece = self.cells[file as usize][rank as usize];
                 row.push_str(&get_square_for_display(&piece, pretty));
             }
 
@@ -242,23 +248,23 @@ impl Board {
             return false;
         }
 
-        let x_inc = pair.dx().signum();
-        let y_inc = pair.dy().signum();
+        let x_inc = pair.dx().signum() as i16;
+        let y_inc = pair.dy().signum() as i16;
 
-        let mut x: isize = pair.start.file as isize;
-        let mut y: isize = pair.start.rank as isize;
+        let mut x: i16 = pair.start.file as i16; // Safe to cast u8 to i16
+        let mut y: i16 = pair.start.rank as i16; // Safe to cast u8 to i16
 
         loop {
             x = x + x_inc;
             y = y + y_inc;
 
-            let file: usize = x as usize;
-            let rank: usize = y as usize;
-            if rank == pair.end.rank && file == pair.end.file {
+            let file = x;
+            let rank = y;
+            if rank == pair.end.rank as i16 && file == pair.end.file as i16 {
                 return true;
             }
 
-            if self.cells[file][rank].is_some() {
+            if self.cells[file as usize][rank as usize].is_some() {
                 return false;
             }
         }
@@ -297,7 +303,7 @@ impl Board {
 
         for i in 0..BOARD_SIZE {
             for j in 0..BOARD_SIZE {
-                let p = &self.cells[i][j];
+                let p = &self.cells[i as usize][j as usize];
                 if p.is_some() {
                     ret.push(Square::new(i, j, *p))
                 }
