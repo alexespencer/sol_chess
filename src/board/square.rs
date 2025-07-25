@@ -4,22 +4,18 @@ use core::fmt;
 
 #[derive(Clone, Eq, Hash, PartialEq)]
 pub struct Square {
-    // a = 0, b = 1, c = 2, d = 3 and so on.
     pub file: usize,
-
-    // 1 = 0, 2 = 1, 3 = 2, 4 = 3 and so on.
     pub rank: usize,
-
     pub piece: Option<Piece>,
 }
 
 pub struct SquarePair {
     pub start: Square,
     pub end: Square,
-    pub dx: usize,
-    pub dy: usize,
-    pub x_dir: i8,
-    pub y_dir: i8,
+    // pub dx: isize,
+    // pub dy: usize,
+    // pub x_dir: i8,
+    // pub y_dir: i8,
 }
 
 impl Square {
@@ -82,39 +78,21 @@ impl Square {
 }
 
 impl SquarePair {
-    pub fn new(start: Square, end: Square) -> Self {
-        let mut dx = 0;
-        let mut dy = 0;
-        let mut x_dir = 0;
-        let mut y_dir = 0;
-        if start.file > end.file {
-            x_dir = -1;
-            dx = start.file - end.file;
-        } else if end.file > start.file {
-            x_dir = 1;
-            dx = end.file - start.file;
-        }
-
-        if start.rank > end.rank {
-            y_dir = -1;
-            dy = start.rank - end.rank;
-        } else if end.rank > start.rank {
-            y_dir = 1;
-            dy = end.rank - start.rank;
-        }
-
-        SquarePair {
-            start,
-            end,
-            dx,
-            dy,
-            x_dir,
-            y_dir,
-        }
+    pub fn dx(&self) -> isize {
+        self.end.file as isize - self.start.file as isize
     }
 
+    pub fn dy(&self) -> isize {
+        self.end.rank as isize - self.start.rank as isize
+    }
+
+    pub fn new(start: Square, end: Square) -> Self {
+        SquarePair { start, end }
+    }
+
+    // TODO: this should become an invariant so it's imopssible to create
     pub fn is_different(&self) -> bool {
-        self.dx != 0 || self.dy != 0
+        self.dx() != 0 || self.dy() != 0
     }
 }
 

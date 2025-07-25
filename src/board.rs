@@ -207,7 +207,7 @@ impl Board {
     }
 
     fn is_king_legal(&self, pair: &SquarePair) -> bool {
-        pair.dx <= 1 && pair.dy <= 1
+        pair.dx().abs() <= 1 && pair.dy().abs() <= 1
     }
 
     fn is_queen_legal(&self, pair: &SquarePair) -> bool {
@@ -215,42 +215,45 @@ impl Board {
     }
 
     fn is_bishop_legal(&self, pair: &SquarePair) -> bool {
-        pair.dx == pair.dy && self.is_path_free(pair)
+        pair.dx().abs() == pair.dy().abs() && self.is_path_free(pair)
     }
 
     fn is_knight_legal(&self, pair: &SquarePair) -> bool {
-        (pair.dx == 2 && pair.dy == 1) || (pair.dx == 1 && pair.dy == 2)
+        (pair.dx().abs() == 2 && pair.dy().abs() == 1)
+            || (pair.dx().abs() == 1 && pair.dy().abs() == 2)
     }
 
     fn is_rook_legal(&self, pair: &SquarePair) -> bool {
-        if pair.dx != 0 && pair.dy != 0 {
+        if pair.dx() != 0 && pair.dy() != 0 {
             return false;
         }
 
         self.is_path_free(pair)
     }
 
+    // Pawn move is legal only if it is taking a piece
     fn is_pawn_legal(&self, pair: &SquarePair) -> bool {
-        pair.dx == 1 && pair.dy == 1 && pair.y_dir == -1
+        pair.dx().abs() == 1 && pair.dy() == -1
     }
 
     fn is_path_free(&self, pair: &SquarePair) -> bool {
         // There is no straight line or diagonal to get through
-        if pair.dx != pair.dy && pair.dx != 0 && pair.dy != 0 {
+        if pair.dx().abs() != pair.dy().abs() && pair.dx() != 0 && pair.dy() != 0 {
             return false;
         }
 
-        let x_inc = pair.x_dir;
-        let y_inc = pair.y_dir;
-        let mut x: i8 = pair.start.file.try_into().unwrap();
-        let mut y: i8 = pair.start.rank.try_into().unwrap();
+        let x_inc = pair.dx().signum();
+        let y_inc = pair.dy().signum();
+
+        let mut x: isize = pair.start.file as isize;
+        let mut y: isize = pair.start.rank as isize;
 
         loop {
             x = x + x_inc;
             y = y + y_inc;
 
-            let file: usize = x.try_into().unwrap();
-            let rank: usize = y.try_into().unwrap();
+            let file: usize = x as usize;
+            let rank: usize = y as usize;
             if rank == pair.end.rank && file == pair.end.file {
                 return true;
             }
