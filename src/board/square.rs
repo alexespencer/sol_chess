@@ -34,7 +34,6 @@ impl Location {
     }
 
     pub fn file_notation(&self) -> String {
-        // TODO: remove unwrap. Check on init that n file <= 3 (or board size)
         String::from(
             FILE_CHARS
                 .chars()
@@ -108,7 +107,7 @@ impl Square {
             c => Piece::try_from(c.to_string().as_str()).context("parse char to Piece")?,
         };
         let location = Location::try_parse(chars.as_str());
-        Ok(Square::new(location?, piece))
+        Ok(Square::new(location.context("parse location")?, piece))
     }
 
     pub fn notation(&self) -> String {
@@ -117,11 +116,6 @@ impl Square {
 
     fn piece_notation(&self) -> String {
         self.piece.to_string()
-    }
-
-    // TODO: can we remove this?
-    pub fn set_piece(&mut self, piece: Piece) {
-        self.piece = piece;
     }
 }
 

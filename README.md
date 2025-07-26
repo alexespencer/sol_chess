@@ -77,16 +77,3 @@ Found 3 solutions
 2. Select pieces to place based on its weight.
     3. Eg: Queen is too powerful, so it has lower weightage.
     4. Eg: Knights are confusing. More knights.
-
-
-# TODO
-
-- [ ] Use type state to remove `.expect("Trying to move a blank")`
-- [ ] Remove println!("Invalid move - {}", mv.notation()); - either make moves always valid (why wouldn't they be), or return a result here `pub fn make_move(&mut self, mv: CMove) -> Option<CMove> {`
-- [ ] Remove pub from_piece: Piece, // TODO: remove, duplicated in CMove...
-- [ ] ...then, isn't SquarePair kinda just like CMove?
-- [ ] Remove unwrap() outside of tests
-
-Serde stuff
-- [ ] The notation for square uses 3 chars. Could do something like FEN notation to create a board?
-- [ ] Remove manual "parse" functions in favour of `serdev` crate

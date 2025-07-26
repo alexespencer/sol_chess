@@ -5,7 +5,7 @@ pub mod piece;
 pub mod square;
 
 use core::fmt;
-use eyre::{Result, bail};
+use eyre::{Context, Result, bail};
 use std::{
     collections::{HashMap, HashSet},
     fmt::{Display, Formatter},
@@ -14,7 +14,6 @@ use std::{
 use cmove::CMove;
 use constants::BOARD_SIZE;
 use errors::SError;
-use eyre::Context;
 use piece::Piece;
 use square::Square;
 
@@ -60,7 +59,7 @@ impl Board {
                 board.set(
                     Location::try_new(i, j)
                         .context("create Location")
-                        .map_err(|_| SError::InvalidBoard)?,
+                        .map_err(|_| SError::InvalidNotation)?,
                     piece,
                 );
             }
@@ -77,7 +76,7 @@ impl Board {
         let mut chars = board_string.chars();
         for r in 0..BOARD_SIZE {
             for f in 0..BOARD_SIZE {
-                let c = chars.next().unwrap();
+                let c = chars.next().ok_or(SError::InvalidNotation)?;
                 let piece = match c {
                     'K' => Piece::King,
                     'Q' => Piece::Queen,
@@ -145,7 +144,7 @@ impl Board {
         println!("{:^40}\n", format!("id: {}", self.id()));
     }
 
-    /// TODO: replace with Hash using Derivative crate
+    /// Convert the board state into a u128. This is a reversible operation
     pub fn id(&self) -> u128 {
         let mut res: u128 = 0;
 

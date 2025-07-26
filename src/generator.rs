@@ -27,7 +27,7 @@ pub fn generate(num_pieces: u32, num_solutions: u32, rand: &impl RandomRange) ->
         Piece::Rook,
     ];
 
-    if num_pieces > candidate_pieces.len().try_into().unwrap() {
+    if num_pieces as usize > candidate_pieces.len() {
         panic!(
             "Number of pieces to place on the board should be <= {}",
             candidate_pieces.len()

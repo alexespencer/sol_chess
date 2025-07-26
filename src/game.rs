@@ -557,7 +557,7 @@ impl Game {
                 self.get(i as usize, j as usize).is_target = true;
             }
 
-            return GameState::SelectTarget(selected.unwrap());
+            return GameState::SelectTarget((i, j));
         }
 
         if let Some((i, j)) = previous_target {

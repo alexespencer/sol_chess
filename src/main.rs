@@ -32,7 +32,7 @@ macro_rules! load_sound {
     ($file_name:expr) => {
         audio::load_sound_from_bytes(include_bytes!($file_name))
             .await
-            .unwrap()
+            .expect("valid sound")
     };
 }
 
