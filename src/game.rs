@@ -376,7 +376,7 @@ impl Game {
                 return false;
             });
             debug_lines.push(format!("Game State: {}", self.state));
-            debug_lines.push(format!("Board State: {}", self.board.game_state));
+            debug_lines.push(format!("Board State: {}", self.board.game_state()));
             if let Some(hover_square) = hover_square {
                 debug_lines.push(format!("Hover: [ {}, {} ]", hover_square.i, hover_square.j));
             }
@@ -614,10 +614,11 @@ impl Game {
             let m = m.expect("legal move should be found");
             self.board.make_move(m.clone()).expect("move is valid");
 
-            if self.board.game_state == BoardState::Won || self.board.game_state == BoardState::Lost
+            if self.board.game_state() == BoardState::Won
+                || self.board.game_state() == BoardState::Lost
             {
                 self.reset_squares();
-                if self.board.game_state == BoardState::Won {
+                if self.board.game_state() == BoardState::Won {
                     let next_btn = self
                         .gp_btns
                         .get_mut(&ButtonAction::Next)

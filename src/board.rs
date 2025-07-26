@@ -22,7 +22,6 @@ use crate::board::square::Location;
 #[derive(Clone)]
 pub struct Board {
     pub occupied_squares: HashMap<Location, Piece>,
-    pub game_state: BoardState,
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]
@@ -41,7 +40,6 @@ impl Board {
     pub fn new() -> Self {
         Board {
             occupied_squares: HashMap::new(),
-            game_state: BoardState::NotStarted,
         }
     }
 
@@ -104,7 +102,6 @@ impl Board {
             Some(piece) => self.occupied_squares.insert(location, piece),
             None => self.occupied_squares.remove(&location),
         };
-        self.board_state_changed();
         existing_piece
     }
 
@@ -121,7 +118,6 @@ impl Board {
 
         self.set(*mv.to().location(), Some(mv.from().piece()));
         self.set(*mv.from().location(), None);
-        self.board_state_changed();
         Ok(mv)
     }
 
@@ -261,8 +257,8 @@ impl Board {
         }
     }
 
-    fn calc_game_state(&mut self) {
-        self.game_state = if self.pieces_remaining() == 0 {
+    pub fn game_state(&self) -> BoardState {
+        if self.pieces_remaining() == 0 {
             BoardState::NotStarted
         } else if self.pieces_remaining() == 1 {
             BoardState::Won
@@ -270,7 +266,7 @@ impl Board {
             BoardState::Lost
         } else {
             BoardState::InProgress
-        };
+        }
     }
 
     /// This is just a cartesian product of {occupied_squares} x {occupied_squares}
@@ -292,10 +288,6 @@ impl Board {
         self.occupied_squares
             .iter()
             .map(|(location, piece)| OccupiedSquare::new(location.clone(), piece.clone()))
-    }
-
-    fn board_state_changed(&mut self) {
-        self.calc_game_state();
     }
 
     fn get_piece_encoding(piece: Option<Piece>) -> u8 {
@@ -511,7 +503,7 @@ mod tests {
     #[test]
     fn test_smoke_puzzle() {
         let mut board = Board::new();
-        assert_eq!(BoardState::NotStarted, board.game_state);
+        assert_eq!(BoardState::NotStarted, board.game_state());
         assert_eq!(0, board.pieces_remaining());
 
         // K . . .
@@ -519,22 +511,22 @@ mod tests {
         // . . R .
         // N . . .
         set_board_square(&mut board, sq!("Ka4"));
-        assert_eq!(BoardState::Won, board.game_state);
+        assert_eq!(BoardState::Won, board.game_state());
 
         set_board_square(&mut board, sq!("Pb3"));
         set_board_square(&mut board, sq!("Rc2"));
         set_board_square(&mut board, sq!("Na1"));
 
-        assert_eq!(BoardState::InProgress, board.game_state);
+        assert_eq!(BoardState::InProgress, board.game_state());
         assert_eq!(4, board.pieces_remaining());
 
         assert!(board.make_move(mv!("Na1", "Rc2")).is_ok());
         assert_eq!(3, board.pieces_remaining());
-        assert_eq!(BoardState::InProgress, board.game_state);
+        assert_eq!(BoardState::InProgress, board.game_state());
 
         assert!(board.make_move(mv!("Pb3", "Ka4")).is_ok());
         assert_eq!(2, board.pieces_remaining());
-        assert_eq!(BoardState::Lost, board.game_state);
+        assert_eq!(BoardState::Lost, board.game_state());
 
         // P . . .
         // . . . .
@@ -549,12 +541,12 @@ mod tests {
         // . . N .
         // P . . .
         assert_eq!(4, board.pieces_remaining());
-        assert_eq!(BoardState::InProgress, board.game_state);
+        assert_eq!(BoardState::InProgress, board.game_state());
 
         board.make_move(mv!("Qa3", "Pa4")).unwrap();
         board.make_move(mv!("Nc2", "Pa1")).unwrap();
         assert_eq!(2, board.pieces_remaining());
-        assert_eq!(BoardState::InProgress, board.game_state);
+        assert_eq!(BoardState::InProgress, board.game_state());
 
         // Q . . .
         // . . . .
@@ -562,7 +554,7 @@ mod tests {
         // N . . .
         board.make_move(mv!("Qa4", "Na1")).unwrap();
         assert_eq!(1, board.pieces_remaining());
-        assert_eq!(BoardState::Won, board.game_state);
+        assert_eq!(BoardState::Won, board.game_state());
     }
 
     #[test]
