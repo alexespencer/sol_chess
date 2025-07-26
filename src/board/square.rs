@@ -1,3 +1,5 @@
+use crate::board::constants::FILE_CHARS;
+
 use super::constants::BOARD_SIZE;
 use super::piece::Piece;
 use eyre::{Context, OptionExt, Result, ensure};
@@ -17,13 +19,28 @@ impl Location {
         self.rank
     }
 
-    pub fn new(file: u8, rank: u8) -> Self {
-        Location { file, rank }
+    pub fn new(file: u8, rank: u8) -> Result<Self> {
+        ensure!(
+            file < BOARD_SIZE,
+            "file should be between 0-{}",
+            BOARD_SIZE - 1
+        );
+        ensure!(
+            rank < BOARD_SIZE,
+            "rank should be between 0-{}",
+            BOARD_SIZE - 1
+        );
+        Ok(Location { file, rank })
     }
 
     pub fn file_notation(&self) -> String {
         // TODO: remove unwrap. Check on init that n file <= 3 (or board size)
-        String::from("abcd".chars().nth(self.file() as usize).unwrap())
+        String::from(
+            FILE_CHARS
+                .chars()
+                .nth(self.file() as usize)
+                .expect("checked on construction"),
+        )
     }
 
     pub fn rank_notation(&self) -> String {
@@ -46,19 +63,21 @@ impl Location {
             _ => panic!("file should be between a-d"),
         };
 
-        let rank = u8::try_from(
-            notation
-                .chars()
-                .nth(1)
-                .ok_or_eyre("no rank")
-                .context("getting rank")?,
-        )
-        .context("parsing rank")?;
-        if rank < 1 || rank > BOARD_SIZE {
-            panic!("rank should be between 1-{}", BOARD_SIZE);
-        }
+        let rank = notation
+            .chars()
+            .nth(1)
+            .ok_or_eyre("no rank")
+            .context("getting rank")?
+            .to_digit(10)
+            .ok_or_eyre("rank was not digit")
+            .context("parse rank digit")? as u8;
+
+        ensure!(
+            (1..=BOARD_SIZE).contains(&rank),
+            format!("rank should be between 1-{}", BOARD_SIZE)
+        );
         let rank = BOARD_SIZE - rank;
-        Ok(Location::new(file, rank))
+        Location::new(file, rank)
     }
 }
 
@@ -87,28 +106,15 @@ impl Square {
         Square { location, piece }
     }
 
-    pub fn parse(notation: &str) -> Self {
+    pub fn parse(notation: &str) -> Result<Self> {
         let mut chars = notation.chars();
         let piece = chars.next().expect("Piece missing");
         let piece = match piece {
             '.' => None,
             c => Piece::try_from(c.to_string().as_str()).ok(),
         };
-        let file = chars.next().expect("File missing");
-        let file = match file {
-            'a' => 0,
-            'b' => 1,
-            'c' => 2,
-            'd' => 3,
-            _ => panic!("file should be between a-d"),
-        };
-
-        let rank = chars.next().unwrap().to_digit(10).expect("rank missing") as u8;
-        if rank < 1 || rank > BOARD_SIZE {
-            panic!("rank should be between 1-{}", BOARD_SIZE);
-        }
-        let rank = BOARD_SIZE - rank;
-        Square::new(Location::new(file, rank), piece)
+        let location = Location::parse(chars.as_str());
+        Ok(Square::new(location?, piece))
     }
 
     pub fn notation(&self) -> String {
@@ -164,7 +170,7 @@ mod tests {
     macro_rules! validate_square {
         ($notation:literal, $file:expr, $rank:expr) => {
             let notation = format!("{}{}", "K", $notation);
-            let square = Square::parse(&notation);
+            let square = Square::parse(&notation).unwrap();
             assert_eq!(square.location().file(), $file);
             assert_eq!(square.location().rank(), $rank);
             assert_eq!(square.piece, Some(Piece::King));
@@ -195,9 +201,16 @@ mod tests {
     // Assert trying to create a SquarePair where start and end are the same is an err
     #[test]
     fn test_square_pair_try_new_same_start_end() {
-        let start = Square::parse(".a1");
-        let end = Square::parse(".a1");
+        let start = Square::parse(".a1").unwrap();
+        let end = Square::parse(".a1").unwrap();
         let result = SquarePair::try_new(start, end);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_location_parse() {
+        let location = Location::parse("a1").unwrap();
+        assert_eq!(location.file, 0);
+        assert_eq!(location.rank, 3);
     }
 }

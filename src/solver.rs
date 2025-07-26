@@ -53,7 +53,7 @@ mod tests {
 
     macro_rules! sq {
         ($sq:literal) => {
-            Square::parse($sq)
+            Square::parse($sq).unwrap()
         };
     }
 

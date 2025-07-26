@@ -315,7 +315,7 @@ impl Game {
             if let Some(p) = &self
                 .board
                 .occupied_squares
-                .get(&Location::new(square.i as u8, square.j as u8))
+                .get(&Location::new(square.i as u8, square.j as u8).expect("valid file/rank"))
             {
                 let offset = (square.rect.w - sprite_size) / 2.0;
                 let dtp = p.texture(sprite_size);
@@ -334,10 +334,10 @@ impl Game {
         });
 
         if let Some(selected_square) = selected_square {
-            if let Some(p) = self.board.occupied_squares.get(&Location::new(
-                selected_square.i as u8,
-                selected_square.j as u8,
-            )) {
+            if let Some(p) = self.board.occupied_squares.get(
+                &Location::new(selected_square.i as u8, selected_square.j as u8)
+                    .expect("valid file/rank"),
+            ) {
                 let dtp = p.texture(sprite_size);
                 draw_texture_ex(
                     &self.texture_res,
@@ -539,7 +539,7 @@ impl Game {
                 if let Some(_) = self
                     .board
                     .occupied_squares
-                    .get(&Location::new(square.i as u8, square.j as u8))
+                    .get(&Location::new(square.i as u8, square.j as u8).expect("valid file/rank"))
                 {
                     selected = Some((square.i, square.j));
                 }
@@ -583,7 +583,7 @@ impl Game {
                 if let Some(_) = self
                     .board
                     .occupied_squares
-                    .get(&Location::new(square.i as u8, square.j as u8))
+                    .get(&Location::new(square.i as u8, square.j as u8).expect("valid file/rank"))
                 {
                     selected = Some((square.i, square.j));
                 }

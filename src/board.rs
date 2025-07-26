@@ -13,6 +13,7 @@ use std::{
 use cmove::CMove;
 use constants::BOARD_SIZE;
 use errors::SError;
+use eyre::Context;
 use piece::Piece;
 use square::{Square, SquarePair};
 
@@ -55,7 +56,12 @@ impl Board {
                 let piece = Board::get_piece_from_encoding((working & mask) as u8);
                 working = working >> 3;
                 let piece = piece?;
-                board.set(Location::new(i, j), piece);
+                board.set(
+                    Location::new(i, j)
+                        .context("create Location")
+                        .map_err(|_| SError::InvalidBoard)?,
+                    piece,
+                );
             }
         }
         Ok(board)
@@ -82,7 +88,12 @@ impl Board {
                     _ => return Err(SError::InvalidBoard),
                 };
 
-                board.set(Location::new(f, r), Some(piece));
+                board.set(
+                    Location::new(f, r)
+                        .context("create Location")
+                        .map_err(|_| SError::InvalidBoard)?,
+                    Some(piece),
+                );
             }
         }
         Ok(board)
@@ -119,12 +130,9 @@ impl Board {
         let mut empty_squares = Vec::new();
         for file in 0..BOARD_SIZE {
             for rank in 0..BOARD_SIZE {
-                if self
-                    .occupied_squares
-                    .get(&Location::new(file, rank))
-                    .is_none()
-                {
-                    empty_squares.push(Square::new(Location::new(file, rank), None));
+                let location = Location::new(file, rank).expect("valid file/rank");
+                if self.occupied_squares.get(&location).is_none() {
+                    empty_squares.push(Square::new(location, None));
                 }
             }
         }
@@ -136,6 +144,7 @@ impl Board {
         println!("{:^40}\n", format!("id: {}", self.id()));
     }
 
+    /// TODO: replace with Hash using Derivative crate
     pub fn id(&self) -> u128 {
         let mut res: u128 = 0;
 
@@ -144,7 +153,7 @@ impl Board {
                 res = res << 3;
                 let byte = Board::get_piece_encoding(
                     self.occupied_squares
-                        .get(&Location::new(file, rank))
+                        .get(&Location::new(file, rank).expect("valid file/rank"))
                         .cloned(),
                 );
                 res = res | byte as u128
@@ -159,7 +168,9 @@ impl Board {
         for rank in 0..BOARD_SIZE {
             let mut row = String::new();
             for file in 0..BOARD_SIZE {
-                let piece = self.occupied_squares.get(&Location::new(file, rank));
+                let piece = self
+                    .occupied_squares
+                    .get(&Location::new(file, rank).expect("valid file/rank"));
                 row.push_str(&get_square_for_display(piece, pretty));
             }
 
@@ -263,7 +274,7 @@ impl Board {
 
             if self
                 .occupied_squares
-                .get(&Location::new(file as u8, rank as u8))
+                .get(&Location::new(file as u8, rank as u8).expect("valid file/rank"))
                 .is_some()
             {
                 return false;
@@ -380,7 +391,7 @@ mod tests {
 
     macro_rules! sq {
         ($sq:literal) => {
-            Square::parse($sq)
+            Square::parse($sq).unwrap()
         };
     }
 
