@@ -49,11 +49,11 @@ impl Solver {
 mod tests {
     use super::*;
     use crate::board::set_board_square;
-    use crate::board::{Board, square::Square};
+    use crate::board::{Board, square::OccupiedSquare};
 
     macro_rules! sq {
         ($sq:literal) => {
-            Square::parse($sq).unwrap()
+            OccupiedSquare::parse($sq).unwrap()
         };
     }
 

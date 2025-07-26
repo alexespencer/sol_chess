@@ -15,7 +15,7 @@ use cmove::CMove;
 use constants::BOARD_SIZE;
 use errors::SError;
 use piece::Piece;
-use square::Square;
+use square::OccupiedSquare;
 
 use crate::board::square::Location;
 
@@ -296,10 +296,10 @@ impl Board {
         return ret;
     }
 
-    fn all_occupied_squares(&self) -> impl IntoIterator<Item = Square> {
+    fn all_occupied_squares(&self) -> impl IntoIterator<Item = OccupiedSquare> {
         self.occupied_squares
             .iter()
-            .map(|(location, piece)| Square::new(location.clone(), piece.clone()))
+            .map(|(location, piece)| OccupiedSquare::new(location.clone(), piece.clone()))
     }
 
     fn board_state_changed(&mut self) {
@@ -367,7 +367,7 @@ impl Display for BoardState {
 }
 
 #[cfg(test)]
-pub fn set_board_square(board: &mut Board, square: Square) -> Option<Piece> {
+pub fn set_board_square(board: &mut Board, square: OccupiedSquare) -> Option<Piece> {
     board.set(*square.location(), Some(square.piece()))
 }
 
@@ -377,7 +377,7 @@ mod tests {
 
     macro_rules! sq {
         ($sq:literal) => {
-            Square::parse($sq).unwrap()
+            OccupiedSquare::parse($sq).unwrap()
         };
     }
 

@@ -1,16 +1,16 @@
-use super::{piece::Piece, square::Square};
+use super::{piece::Piece, square::OccupiedSquare};
 use eyre::{Result, ensure};
 
 #[derive(PartialEq, Hash, Eq, Clone, Debug)]
 pub struct CMove {
-    from: Square,
-    to: Square,
+    from: OccupiedSquare,
+    to: OccupiedSquare,
 }
 
 impl CMove {
     // TODO: moves could be created and validated from a Board?
 
-    pub fn try_new(from: Square, to: Square) -> Result<Self> {
+    pub fn try_new(from: OccupiedSquare, to: OccupiedSquare) -> Result<Self> {
         ensure!(
             from.location() != to.location(),
             "from/to location must not be the same"
@@ -26,11 +26,11 @@ impl CMove {
         format!("{}x{}", piece_qualifier, self.to.notation())
     }
 
-    pub fn from(&self) -> &Square {
+    pub fn from(&self) -> &OccupiedSquare {
         &self.from
     }
 
-    pub fn to(&self) -> &Square {
+    pub fn to(&self) -> &OccupiedSquare {
         &self.to
     }
 
@@ -49,8 +49,8 @@ mod tests {
 
     #[test]
     fn test_square_pair_try_new_same_start_end() {
-        let start = Square::parse("Ka1").unwrap();
-        let end = Square::parse("Ka1").unwrap();
+        let start = OccupiedSquare::parse("Ka1").unwrap();
+        let end = OccupiedSquare::parse("Ka1").unwrap();
         let result = CMove::try_new(start, end);
         assert!(result.is_err());
     }

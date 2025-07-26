@@ -81,12 +81,12 @@ impl Location {
 }
 
 #[derive(Clone, Debug, Copy, Eq, Hash, PartialEq)]
-pub struct Square {
+pub struct OccupiedSquare {
     location: Location,
     piece: Piece,
 }
 
-impl Square {
+impl OccupiedSquare {
     pub fn location(&self) -> &Location {
         &self.location
     }
@@ -96,7 +96,7 @@ impl Square {
     }
 
     pub fn new(location: Location, piece: Piece) -> Self {
-        Square { location, piece }
+        OccupiedSquare { location, piece }
     }
 
     pub fn parse(notation: &str) -> Result<Self> {
@@ -107,7 +107,10 @@ impl Square {
             c => Piece::try_from(c.to_string().as_str()).context("parse char to Piece")?,
         };
         let location = Location::try_parse(chars.as_str());
-        Ok(Square::new(location.context("parse location")?, piece))
+        Ok(OccupiedSquare::new(
+            location.context("parse location")?,
+            piece,
+        ))
     }
 
     pub fn notation(&self) -> String {
@@ -126,7 +129,7 @@ mod tests {
     macro_rules! validate_square {
         ($notation:literal, $file:expr, $rank:expr) => {
             let notation = format!("{}{}", "K", $notation);
-            let square = Square::parse(&notation).unwrap();
+            let square = OccupiedSquare::parse(&notation).unwrap();
             assert_eq!(square.location().file(), $file);
             assert_eq!(square.location().rank(), $rank);
             assert_eq!(square.piece, Piece::King);
