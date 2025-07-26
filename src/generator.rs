@@ -114,7 +114,7 @@ fn try_generate(
             let square_index = rand.gen_range(0, empty_squares.len());
             let mut random_square = empty_squares[square_index].clone();
             random_square.set_piece(Some(piece));
-            board.set(random_square.clone());
+            board.set(*random_square.location(), random_square.piece());
             let solutions = Solver::new(board.clone()).solve();
             if solutions.len() > 0 {
                 placed = true;
@@ -124,7 +124,7 @@ fn try_generate(
             }
 
             random_square.set_piece(None);
-            board.set(random_square);
+            board.set(*random_square.location(), random_square.piece());
         }
     }
 

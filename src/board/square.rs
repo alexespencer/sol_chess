@@ -1,6 +1,6 @@
 use super::constants::BOARD_SIZE;
 use super::piece::Piece;
-use eyre::{Result, ensure};
+use eyre::{Context, OptionExt, Result, ensure};
 
 #[derive(Clone, Debug, Copy, Eq, Hash, PartialEq)]
 pub struct Location {
@@ -32,6 +32,33 @@ impl Location {
 
     pub fn notation(&self) -> String {
         format!("{}{}", self.file_notation(), self.rank_notation())
+    }
+
+    pub fn parse(notation: &str) -> Result<Self> {
+        ensure!(notation.len() == 2, "notation for Location is 2 chars");
+
+        let file = notation.chars().nth(0).expect("File missing");
+        let file = match file {
+            'a' => 0,
+            'b' => 1,
+            'c' => 2,
+            'd' => 3,
+            _ => panic!("file should be between a-d"),
+        };
+
+        let rank = u8::try_from(
+            notation
+                .chars()
+                .nth(1)
+                .ok_or_eyre("no rank")
+                .context("getting rank")?,
+        )
+        .context("parsing rank")?;
+        if rank < 1 || rank > BOARD_SIZE {
+            panic!("rank should be between 1-{}", BOARD_SIZE);
+        }
+        let rank = BOARD_SIZE - rank;
+        Ok(Location::new(file, rank))
     }
 }
 

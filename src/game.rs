@@ -10,7 +10,7 @@ use shadow::draw_shadow;
 use sound::Sounds;
 
 use crate::{
-    board::{Board, BoardState},
+    board::{Board, BoardState, square::Location},
     game::texture::Texture,
     generator::{self, RandomRange},
 };
@@ -312,7 +312,11 @@ impl Game {
                 color,
             );
 
-            if let Some(p) = &self.board.cells[square.i][square.j] {
+            if let Some(p) = &self
+                .board
+                .occupied_squares
+                .get(&Location::new(square.i as u8, square.j as u8))
+            {
                 let offset = (square.rect.w - sprite_size) / 2.0;
                 let dtp = p.texture(sprite_size);
                 if !square.is_source {
@@ -330,7 +334,10 @@ impl Game {
         });
 
         if let Some(selected_square) = selected_square {
-            if let Some(p) = self.board.cells[selected_square.i][selected_square.j] {
+            if let Some(p) = self.board.occupied_squares.get(&Location::new(
+                selected_square.i as u8,
+                selected_square.j as u8,
+            )) {
                 let dtp = p.texture(sprite_size);
                 draw_texture_ex(
                     &self.texture_res,
@@ -529,7 +536,11 @@ impl Game {
         let mut selected = None;
         for square in &mut self.squares {
             if mouse.overlaps_rect(&square.rect) {
-                if let Some(_) = self.board.cells[square.i][square.j] {
+                if let Some(_) = self
+                    .board
+                    .occupied_squares
+                    .get(&Location::new(square.i as u8, square.j as u8))
+                {
                     selected = Some((square.i, square.j));
                 }
             }
@@ -569,7 +580,11 @@ impl Game {
         let mut selected = None;
         for square in &mut self.squares {
             if mouse.overlaps_rect(&square.rect) {
-                if let Some(_) = self.board.cells[square.i][square.j] {
+                if let Some(_) = self
+                    .board
+                    .occupied_squares
+                    .get(&Location::new(square.i as u8, square.j as u8))
+                {
                     selected = Some((square.i, square.j));
                 }
             }
