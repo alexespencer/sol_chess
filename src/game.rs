@@ -547,7 +547,7 @@ impl Game {
         if let Some((i, j)) = selected {
             self.get(i, j).is_source = true;
             let mut target_squares = vec![];
-            for m in self.board.legal_moves.iter() {
+            for m in self.board.legal_moves().iter() {
                 if m.from().location().file() == i as u8 && m.from().location().rank() == j as u8 {
                     target_squares.push((m.to().location().file(), m.to().location().rank()));
                 }
@@ -603,7 +603,8 @@ impl Game {
         }
 
         if is_legal {
-            let m = self.board.legal_moves.iter().find(|m| {
+            let legal_moves = self.board.legal_moves();
+            let m = legal_moves.iter().find(|m| {
                 m.from().location().file() == s_x as u8
                     && m.from().location().rank() == s_y as u8
                     && m.to().location().file() == x as u8

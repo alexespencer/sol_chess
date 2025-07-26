@@ -7,7 +7,7 @@ pub mod square;
 use core::fmt;
 use eyre::{Context, Result, bail};
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashMap,
     fmt::{Display, Formatter},
 };
 
@@ -22,7 +22,6 @@ use crate::board::square::Location;
 #[derive(Clone)]
 pub struct Board {
     pub occupied_squares: HashMap<Location, Piece>,
-    pub legal_moves: HashSet<CMove>,
     pub game_state: BoardState,
 }
 
@@ -42,7 +41,6 @@ impl Board {
     pub fn new() -> Self {
         Board {
             occupied_squares: HashMap::new(),
-            legal_moves: HashSet::new(),
             game_state: BoardState::NotStarted,
         }
     }
@@ -111,10 +109,11 @@ impl Board {
     }
 
     pub fn make_move(&mut self, mv: CMove) -> Result<CMove> {
-        if !self.legal_moves.contains(&mv) {
+        let legal_moves = self.legal_moves();
+        if !legal_moves.contains(&mv) {
             eprintln!("Invalid move - {}", mv.notation());
             eprintln!("Legal moves - ");
-            for m in &self.legal_moves {
+            for m in &legal_moves {
                 eprintln!("{}", m.notation());
             }
             bail!("invalid move");
@@ -184,10 +183,6 @@ impl Board {
         }
 
         board_string
-    }
-
-    fn calc_legal_moves(&mut self) {
-        self.legal_moves = self.all_valid_moves().into_iter().collect();
     }
 
     /// Returns if a move is legal for this board state
@@ -271,7 +266,7 @@ impl Board {
             BoardState::NotStarted
         } else if self.pieces_remaining() == 1 {
             BoardState::Won
-        } else if self.legal_moves.is_empty() {
+        } else if self.legal_moves().is_empty() {
             BoardState::Lost
         } else {
             BoardState::InProgress
@@ -280,9 +275,8 @@ impl Board {
 
     /// This is just a cartesian product of {occupied_squares} x {occupied_squares}
     /// however the moves are validated against the current board state
-    fn all_valid_moves(&self) -> impl IntoIterator<Item = CMove> {
-        let ret = self
-            .all_occupied_squares()
+    pub fn legal_moves(&self) -> Vec<CMove> {
+        self.all_occupied_squares()
             .into_iter()
             .map(|start| {
                 self.all_occupied_squares()
@@ -291,9 +285,7 @@ impl Board {
             })
             .flatten()
             .filter(|m| self.is_legal_move(m))
-            .collect::<Vec<CMove>>();
-
-        return ret;
+            .collect::<Vec<CMove>>()
     }
 
     fn all_occupied_squares(&self) -> impl IntoIterator<Item = OccupiedSquare> {
@@ -303,7 +295,6 @@ impl Board {
     }
 
     fn board_state_changed(&mut self) {
-        self.calc_legal_moves();
         self.calc_game_state();
     }
 
@@ -397,7 +388,7 @@ mod tests {
 
     macro_rules! validate_legal_moves {
         ($board:expr, $($move:expr,)*) => {
-            let mut legal_moves = $board.legal_moves.iter().map(|m| m.clone()).collect::<Vec<CMove>>();
+            let mut legal_moves = $board.legal_moves().iter().map(|m| m.clone()).collect::<Vec<CMove>>();
 
             $(
                 assert!(legal_moves.contains(&$move));
@@ -436,7 +427,7 @@ mod tests {
     fn test_legal_moves() {
         let mut board = Board::new();
         assert_eq!(0, board.pieces_remaining());
-        assert_eq!(0, board.legal_moves.len());
+        assert_eq!(0, board.legal_moves().len());
         assert!(board.make_move(mv!("Rb2", "Nd1")).is_err());
 
         set_board_square(&mut board, sq!("Qa4"));

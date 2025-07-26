@@ -35,7 +35,7 @@ impl Solver {
             return solutions;
         };
 
-        self.board.legal_moves.iter().for_each(|m| {
+        self.board.legal_moves().iter().for_each(|m| {
             let solver = self.clone(m.clone());
             let more_solutions = solver.solve();
             solutions.extend(more_solutions);
