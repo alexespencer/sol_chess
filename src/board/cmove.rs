@@ -10,8 +10,8 @@ pub struct CMove {
 
 impl CMove {
     pub fn new(from: Square, to: Square) -> Self {
-        let from_piece = from.piece.expect("Trying to move a blank");
-        let to_piece = to.piece.expect("Trying to capture a blank");
+        let from_piece = from.piece().expect("Trying to move a blank");
+        let to_piece = to.piece().expect("Trying to capture a blank");
         CMove {
             from_piece,
             from,

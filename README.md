@@ -78,3 +78,9 @@ Found 3 solutions
     3. Eg: Queen is too powerful, so it has lower weightage.
     4. Eg: Knights are confusing. More knights.
 
+
+# TODO
+
+- [ ] The notation stuff is a bit weird (3 chars per Square). Could do something like FEN notation to create a board?
+- [ ] Use type state to remove `.expect("Trying to move a blank")`
+- [ ] Remove println!("Invalid move - {}", mv.notation()); - either make moves always valid (why wouldn't they be), or return a result here `pub fn make_move(&mut self, mv: CMove) -> Option<CMove> {`

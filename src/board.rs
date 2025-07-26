@@ -87,10 +87,10 @@ impl Board {
     }
 
     pub fn set(&mut self, square: Square) -> Option<Piece> {
-        let new_is_occuppied = square.piece.is_some();
+        let new_is_occuppied = square.piece().is_some();
         let existing = mem::replace(
-            &mut self.cells[square.file as usize][square.rank as usize],
-            square.piece,
+            &mut self.cells[square.file() as usize][square.rank() as usize],
+            square.piece(),
         );
 
         // If placing a piece on a blank, increment piece count
@@ -118,10 +118,10 @@ impl Board {
         }
 
         let from_piece = mem::replace(
-            &mut self.cells[mv.from.file as usize][mv.from.rank as usize],
+            &mut self.cells[mv.from.file() as usize][mv.from.rank() as usize],
             None,
         );
-        self.cells[mv.to.file as usize][mv.to.rank as usize] = from_piece;
+        self.cells[mv.to.file() as usize][mv.to.rank() as usize] = from_piece;
 
         self.pieces_remaining -= 1;
         self.board_state_changed();
@@ -184,7 +184,6 @@ impl Board {
         self.legal_moves = self
             .all_possible_move_pairs()
             .into_iter()
-            .filter(SquarePair::is_different)
             .filter_map(|pair| self.is_legal_move(pair))
             .collect()
     }
@@ -192,7 +191,8 @@ impl Board {
     fn is_legal_move(&self, pair: SquarePair) -> Option<CMove> {
         // The below block is just to make the compiler happy. Start will always
         // have a piece
-        let Some(piece) = pair.start.piece else {
+        // TODO: if start will always have a piece, make this go away
+        let Some(piece) = pair.start().piece() else {
             return None;
         };
 
@@ -206,7 +206,7 @@ impl Board {
         };
 
         if legal {
-            return Some(CMove::new(pair.start, pair.end));
+            return Some(CMove::new(*pair.start(), *pair.end()));
         }
 
         None
@@ -251,8 +251,8 @@ impl Board {
         let x_inc = pair.dx().signum() as i16;
         let y_inc = pair.dy().signum() as i16;
 
-        let mut x: i16 = pair.start.file as i16; // Safe to cast u8 to i16
-        let mut y: i16 = pair.start.rank as i16; // Safe to cast u8 to i16
+        let mut x: i16 = pair.start().file() as i16; // Safe to cast u8 to i16
+        let mut y: i16 = pair.start().rank() as i16; // Safe to cast u8 to i16
 
         loop {
             x = x + x_inc;
@@ -260,7 +260,7 @@ impl Board {
 
             let file = x;
             let rank = y;
-            if rank == pair.end.rank as i16 && file == pair.end.file as i16 {
+            if rank == pair.end().rank() as i16 && file == pair.end().file() as i16 {
                 return true;
             }
 
@@ -290,7 +290,7 @@ impl Board {
             .map(|start| {
                 self.all_occupied_squares()
                     .into_iter()
-                    .map(move |end| SquarePair::new(start.clone(), end))
+                    .filter_map(move |end| SquarePair::try_new(start, end).ok())
             })
             .flatten()
             .collect::<Vec<SquarePair>>();
@@ -457,7 +457,6 @@ mod tests {
         board.set(sq!("Nd1"));
 
         assert_eq!(10, board.pieces_remaining);
-
         board.pretty_print();
 
         // Q . P .

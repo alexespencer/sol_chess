@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use crate::{
-    board::{piece::Piece, Board},
+    board::{Board, piece::Piece},
     solver::Solver,
 };
 
@@ -113,7 +113,7 @@ fn try_generate(
             let piece = candidate_pieces[index];
             let square_index = rand.gen_range(0, empty_squares.len());
             let mut random_square = empty_squares[square_index].clone();
-            random_square.piece = Some(piece);
+            random_square.set_piece(Some(piece));
             board.set(random_square.clone());
             let solutions = Solver::new(board.clone()).solve();
             if solutions.len() > 0 {
@@ -123,7 +123,7 @@ fn try_generate(
                 continue;
             }
 
-            random_square.piece = None;
+            random_square.set_piece(None);
             board.set(random_square);
         }
     }

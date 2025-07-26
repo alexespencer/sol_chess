@@ -539,8 +539,8 @@ impl Game {
             self.get(i, j).is_source = true;
             let mut target_squares = vec![];
             for m in self.board.legal_moves.iter() {
-                if m.from.file == i as u8 && m.from.rank == j as u8 {
-                    target_squares.push((m.to.file, m.to.rank));
+                if m.from.file() == i as u8 && m.from.rank() == j as u8 {
+                    target_squares.push((m.to.file(), m.to.rank()));
                 }
             }
 
@@ -593,10 +593,10 @@ impl Game {
 
         if is_legal {
             let m = self.board.legal_moves.iter().find(|m| {
-                m.from.file == s_x as u8
-                    && m.from.rank == s_y as u8
-                    && m.to.file == x as u8
-                    && m.to.rank == y as u8
+                m.from.file() == s_x as u8
+                    && m.from.rank() == s_y as u8
+                    && m.to.file() == x as u8
+                    && m.to.rank() == y as u8
             });
 
             let m = m.expect("legal move should be found");

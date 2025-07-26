@@ -1,20 +1,34 @@
 use super::constants::BOARD_SIZE;
 use super::piece::Piece;
 use core::fmt;
+use eyre::{Result, ensure};
 
-#[derive(Clone, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Eq, Hash, PartialEq)]
 pub struct Square {
-    pub file: u8,
-    pub rank: u8,
-    pub piece: Option<Piece>,
+    file: u8,
+    rank: u8,
+    piece: Option<Piece>,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SquarePair {
-    pub start: Square,
-    pub end: Square,
+    start: Square,
+    end: Square,
 }
 
 impl Square {
+    pub fn file(&self) -> u8 {
+        self.file
+    }
+
+    pub fn rank(&self) -> u8 {
+        self.rank
+    }
+
+    pub fn piece(&self) -> Option<Piece> {
+        self.piece
+    }
+
     pub fn new(file: u8, rank: u8, piece: Option<Piece>) -> Self {
         Square { file, rank, piece }
     }
@@ -44,7 +58,7 @@ impl Square {
     }
 
     pub fn file_notation(&self) -> String {
-        String::from("abcd".chars().nth(self.file as usize).unwrap())
+        String::from("abcd".chars().nth(self.file() as usize).unwrap())
     }
 
     pub fn rank_notation(&self) -> String {
@@ -61,19 +75,30 @@ impl Square {
     }
 
     pub fn is_occupied(&self) -> bool {
-        self.piece.is_some()
+        self.piece().is_some()
     }
 
     fn piece_notation(&self) -> String {
-        if self.piece.is_none() {
-            "".to_string()
-        } else {
-            self.piece.unwrap().to_string()
+        match self.piece {
+            Some(piece) => piece.to_string(),
+            None => "".to_string(),
         }
+    }
+
+    pub fn set_piece(&mut self, piece: Option<Piece>) {
+        self.piece = piece;
     }
 }
 
 impl SquarePair {
+    pub fn start(&self) -> &Square {
+        &self.start
+    }
+
+    pub fn end(&self) -> &Square {
+        &self.end
+    }
+
     pub fn dx(&self) -> isize {
         self.end.file as isize - self.start.file as isize
     }
@@ -82,13 +107,12 @@ impl SquarePair {
         self.end.rank as isize - self.start.rank as isize
     }
 
-    pub fn new(start: Square, end: Square) -> Self {
-        SquarePair { start, end }
-    }
-
-    // TODO: this should become an invariant so it's imopssible to create
-    pub fn is_different(&self) -> bool {
-        self.dx() != 0 || self.dy() != 0
+    pub fn try_new(start: Square, end: Square) -> Result<Self> {
+        ensure!(
+            start.file != end.file || start.rank != end.rank,
+            "start position must be different to end position"
+        );
+        Ok(SquarePair { start, end })
     }
 }
 
@@ -131,5 +155,14 @@ mod tests {
         validate_square!("d2", 3, 2);
         validate_square!("d3", 3, 1);
         validate_square!("d4", 3, 0);
+    }
+
+    // Assert trying to create a SquarePair where start and end are the same is an err
+    #[test]
+    fn test_square_pair_try_new_same_start_end() {
+        let start = Square::parse(".a1");
+        let end = Square::parse(".a1");
+        let result = SquarePair::try_new(start, end);
+        assert!(result.is_err());
     }
 }
