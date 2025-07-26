@@ -17,6 +17,8 @@ use errors::SError;
 use piece::Piece;
 use square::{Square, SquarePair};
 
+use crate::board::square::Location;
+
 #[derive(Clone)]
 pub struct Board {
     pub cells: [[Option<Piece>; BOARD_SIZE as usize]; BOARD_SIZE as usize],
@@ -52,7 +54,7 @@ impl Board {
                 let piece = Board::get_piece_from_encoding((working & mask) as u8);
                 working = working >> 3;
                 let piece = piece?;
-                board.set(Square::new(i, j, piece));
+                board.set(Square::new(Location::new(i, j), piece));
             }
         }
         Ok(board)
@@ -79,7 +81,7 @@ impl Board {
                     _ => return Err(SError::InvalidBoard),
                 };
 
-                let square = Square::new(f, r, Some(piece));
+                let square = Square::new(Location::new(f, r), Some(piece));
                 board.set(square);
             }
         }
@@ -89,7 +91,7 @@ impl Board {
     pub fn set(&mut self, square: Square) -> Option<Piece> {
         let new_is_occuppied = square.piece().is_some();
         let existing = mem::replace(
-            &mut self.cells[square.file() as usize][square.rank() as usize],
+            &mut self.cells[square.location().file() as usize][square.location().rank() as usize],
             square.piece(),
         );
 
@@ -118,10 +120,10 @@ impl Board {
         }
 
         let from_piece = mem::replace(
-            &mut self.cells[mv.from.file() as usize][mv.from.rank() as usize],
+            &mut self.cells[mv.from.location().file() as usize][mv.from.location().rank() as usize],
             None,
         );
-        self.cells[mv.to.file() as usize][mv.to.rank() as usize] = from_piece;
+        self.cells[mv.to.location().file() as usize][mv.to.location().rank() as usize] = from_piece;
 
         self.pieces_remaining -= 1;
         self.board_state_changed();
@@ -133,7 +135,7 @@ impl Board {
         for file in 0..BOARD_SIZE {
             for rank in 0..BOARD_SIZE {
                 if self.cells[file as usize][rank as usize].is_none() {
-                    empty_squares.push(Square::new(file, rank, None));
+                    empty_squares.push(Square::new(Location::new(file, rank), None));
                 }
             }
         }
@@ -251,8 +253,8 @@ impl Board {
         let x_inc = pair.dx().signum() as i16;
         let y_inc = pair.dy().signum() as i16;
 
-        let mut x: i16 = pair.start().file() as i16; // Safe to cast u8 to i16
-        let mut y: i16 = pair.start().rank() as i16; // Safe to cast u8 to i16
+        let mut x: i16 = pair.start().location().file() as i16; // Safe to cast u8 to i16
+        let mut y: i16 = pair.start().location().rank() as i16; // Safe to cast u8 to i16
 
         loop {
             x = x + x_inc;
@@ -260,7 +262,9 @@ impl Board {
 
             let file = x;
             let rank = y;
-            if rank == pair.end().rank() as i16 && file == pair.end().file() as i16 {
+            if rank == pair.end().location().rank() as i16
+                && file == pair.end().location().file() as i16
+            {
                 return true;
             }
 
@@ -305,7 +309,7 @@ impl Board {
             for j in 0..BOARD_SIZE {
                 let p = &self.cells[i as usize][j as usize];
                 if p.is_some() {
-                    ret.push(Square::new(i, j, *p))
+                    ret.push(Square::new(Location::new(i, j), *p))
                 }
             }
         }

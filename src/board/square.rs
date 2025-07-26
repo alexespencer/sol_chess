@@ -1,12 +1,43 @@
 use super::constants::BOARD_SIZE;
 use super::piece::Piece;
-use core::fmt;
 use eyre::{Result, ensure};
 
-#[derive(Clone, Copy, Eq, Hash, PartialEq)]
-pub struct Square {
+#[derive(Clone, Debug, Copy, Eq, Hash, PartialEq)]
+pub struct Location {
     file: u8,
     rank: u8,
+}
+
+impl Location {
+    pub fn file(&self) -> u8 {
+        self.file
+    }
+
+    pub fn rank(&self) -> u8 {
+        self.rank
+    }
+
+    pub fn new(file: u8, rank: u8) -> Self {
+        Location { file, rank }
+    }
+
+    pub fn file_notation(&self) -> String {
+        // TODO: remove unwrap. Check on init that n file <= 3 (or board size)
+        String::from("abcd".chars().nth(self.file() as usize).unwrap())
+    }
+
+    pub fn rank_notation(&self) -> String {
+        format!("{}", BOARD_SIZE - self.rank)
+    }
+
+    pub fn notation(&self) -> String {
+        format!("{}{}", self.file_notation(), self.rank_notation())
+    }
+}
+
+#[derive(Clone, Debug, Copy, Eq, Hash, PartialEq)]
+pub struct Square {
+    location: Location,
     piece: Option<Piece>,
 }
 
@@ -17,20 +48,16 @@ pub struct SquarePair {
 }
 
 impl Square {
-    pub fn file(&self) -> u8 {
-        self.file
-    }
-
-    pub fn rank(&self) -> u8 {
-        self.rank
+    pub fn location(&self) -> &Location {
+        &self.location
     }
 
     pub fn piece(&self) -> Option<Piece> {
         self.piece
     }
 
-    pub fn new(file: u8, rank: u8, piece: Option<Piece>) -> Self {
-        Square { file, rank, piece }
+    pub fn new(location: Location, piece: Option<Piece>) -> Self {
+        Square { location, piece }
     }
 
     pub fn parse(notation: &str) -> Self {
@@ -54,24 +81,11 @@ impl Square {
             panic!("rank should be between 1-{}", BOARD_SIZE);
         }
         let rank = BOARD_SIZE - rank;
-        Square::new(file, rank, piece)
-    }
-
-    pub fn file_notation(&self) -> String {
-        String::from("abcd".chars().nth(self.file() as usize).unwrap())
-    }
-
-    pub fn rank_notation(&self) -> String {
-        format!("{}", BOARD_SIZE - self.rank)
+        Square::new(Location::new(file, rank), piece)
     }
 
     pub fn notation(&self) -> String {
-        format!(
-            "{}{}{}",
-            self.piece_notation(),
-            self.file_notation(),
-            BOARD_SIZE - self.rank
-        )
+        format!("{}{}", self.piece_notation(), self.location().notation(),)
     }
 
     pub fn is_occupied(&self) -> bool {
@@ -100,25 +114,19 @@ impl SquarePair {
     }
 
     pub fn dx(&self) -> isize {
-        self.end.file as isize - self.start.file as isize
+        self.end.location().file() as isize - self.start.location().file() as isize
     }
 
     pub fn dy(&self) -> isize {
-        self.end.rank as isize - self.start.rank as isize
+        self.end.location().rank() as isize - self.start.location().rank() as isize
     }
 
     pub fn try_new(start: Square, end: Square) -> Result<Self> {
         ensure!(
-            start.file != end.file || start.rank != end.rank,
+            start.location() != end.location(),
             "start position must be different to end position"
         );
         Ok(SquarePair { start, end })
-    }
-}
-
-impl fmt::Debug for Square {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}({},{})", self.notation(), self.file, self.rank)
     }
 }
 
@@ -130,8 +138,8 @@ mod tests {
         ($notation:literal, $file:expr, $rank:expr) => {
             let notation = format!("{}{}", "K", $notation);
             let square = Square::parse(&notation);
-            assert_eq!(square.file, $file);
-            assert_eq!(square.rank, $rank);
+            assert_eq!(square.location().file(), $file);
+            assert_eq!(square.location().rank(), $rank);
             assert_eq!(square.piece, Some(Piece::King));
             assert_eq!(square.notation(), notation);
         };
