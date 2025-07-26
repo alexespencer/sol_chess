@@ -99,7 +99,7 @@ fn try_generate(
     let mut piece_success = 0;
     for _ in 0..num_pieces {
         let mut placed = false;
-        let empty_squares = board.empty_squares();
+        let empty_squares = board.empty_locations();
         let mut attempts = 15;
         while !placed {
             if attempts == 0 {
@@ -112,9 +112,10 @@ fn try_generate(
             let index = rand.gen_range(0, candidate_pieces.len());
             let piece = candidate_pieces[index];
             let square_index = rand.gen_range(0, empty_squares.len());
-            let mut random_square = empty_squares[square_index].clone();
-            random_square.set_piece(Some(piece));
-            board.set(*random_square.location(), random_square.piece());
+
+            let random_location = empty_squares[square_index].clone();
+            board.set(random_location, Some(piece));
+
             let solutions = Solver::new(board.clone()).solve();
             if solutions.len() > 0 {
                 placed = true;
@@ -123,8 +124,7 @@ fn try_generate(
                 continue;
             }
 
-            random_square.set_piece(None);
-            board.set(*random_square.location(), random_square.piece());
+            board.set(random_location, None);
         }
     }
 

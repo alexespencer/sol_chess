@@ -20,7 +20,7 @@ impl Solver {
         let mut moves = self.moves.clone();
         let mut board = self.board.clone();
         moves.push(m.clone());
-        board.make_move(m);
+        board.make_move(m).unwrap(); // TODO: what is this here for? Why only 1 move. Use expect or change to result
         Solver { board, moves }
     }
 
@@ -81,7 +81,7 @@ mod tests {
             let mut board = board.clone();
             solution
                 .into_iter()
-                .for_each(|m| assert!(board.make_move(m).is_some()));
+                .for_each(|m| assert!(board.make_move(m).is_ok()));
             assert_eq!(BoardState::Won, board.game_state);
         }
     }

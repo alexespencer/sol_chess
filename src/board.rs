@@ -5,6 +5,7 @@ pub mod piece;
 pub mod square;
 
 use core::fmt;
+use eyre::{Result, bail};
 use std::{
     collections::{HashMap, HashSet},
     fmt::{Display, Formatter},
@@ -15,7 +16,7 @@ use constants::BOARD_SIZE;
 use errors::SError;
 use eyre::Context;
 use piece::Piece;
-use square::{Square, SquarePair};
+use square::Square;
 
 use crate::board::square::Location;
 
@@ -57,7 +58,7 @@ impl Board {
                 working = working >> 3;
                 let piece = piece?;
                 board.set(
-                    Location::new(i, j)
+                    Location::try_new(i, j)
                         .context("create Location")
                         .map_err(|_| SError::InvalidBoard)?,
                     piece,
@@ -89,7 +90,7 @@ impl Board {
                 };
 
                 board.set(
-                    Location::new(f, r)
+                    Location::try_new(f, r)
                         .context("create Location")
                         .map_err(|_| SError::InvalidBoard)?,
                     Some(piece),
@@ -110,29 +111,29 @@ impl Board {
         existing_piece
     }
 
-    pub fn make_move(&mut self, mv: CMove) -> Option<CMove> {
+    pub fn make_move(&mut self, mv: CMove) -> Result<CMove> {
         if !self.legal_moves.contains(&mv) {
-            println!("Invalid move - {}", mv.notation());
-            println!("Legal moves - ");
+            eprintln!("Invalid move - {}", mv.notation());
+            eprintln!("Legal moves - ");
             for m in &self.legal_moves {
-                println!("{}", m.notation());
+                eprintln!("{}", m.notation());
             }
-            return None;
+            bail!("invalid move");
         }
 
-        self.set(*mv.to.location(), mv.from.piece());
-        self.set(*mv.from.location(), None);
+        self.set(*mv.to().location(), Some(mv.from().piece()));
+        self.set(*mv.from().location(), None);
         self.board_state_changed();
-        Some(mv)
+        Ok(mv)
     }
 
-    pub fn empty_squares(&self) -> Vec<Square> {
+    pub fn empty_locations(&self) -> Vec<Location> {
         let mut empty_squares = Vec::new();
         for file in 0..BOARD_SIZE {
             for rank in 0..BOARD_SIZE {
-                let location = Location::new(file, rank).expect("valid file/rank");
+                let location = Location::try_new(file, rank).expect("valid file/rank");
                 if self.occupied_squares.get(&location).is_none() {
-                    empty_squares.push(Square::new(location, None));
+                    empty_squares.push(location);
                 }
             }
         }
@@ -153,7 +154,7 @@ impl Board {
                 res = res << 3;
                 let byte = Board::get_piece_encoding(
                     self.occupied_squares
-                        .get(&Location::new(file, rank).expect("valid file/rank"))
+                        .get(&Location::try_new(file, rank).expect("valid file/rank"))
                         .cloned(),
                 );
                 res = res | byte as u128
@@ -170,7 +171,7 @@ impl Board {
             for file in 0..BOARD_SIZE {
                 let piece = self
                     .occupied_squares
-                    .get(&Location::new(file, rank).expect("valid file/rank"));
+                    .get(&Location::try_new(file, rank).expect("valid file/rank"));
                 row.push_str(&get_square_for_display(piece, pretty));
             }
 
@@ -187,78 +188,62 @@ impl Board {
     }
 
     fn calc_legal_moves(&mut self) {
-        self.legal_moves = self
-            .all_possible_move_pairs()
-            .into_iter()
-            .filter_map(|pair| self.is_legal_move(pair))
-            .collect()
+        self.legal_moves = self.all_valid_moves().into_iter().collect();
     }
 
-    fn is_legal_move(&self, pair: SquarePair) -> Option<CMove> {
-        // The below block is just to make the compiler happy. Start will always
-        // have a piece
-        // TODO: if start will always have a piece, make this go away
-        let Some(piece) = pair.start().piece() else {
-            return None;
-        };
-
-        let legal = match piece {
-            Piece::King => self.is_king_legal(&pair),
-            Piece::Queen => self.is_queen_legal(&pair),
-            Piece::Bishop => self.is_bishop_legal(&pair),
-            Piece::Knight => self.is_knight_legal(&pair),
-            Piece::Rook => self.is_rook_legal(&pair),
-            Piece::Pawn => self.is_pawn_legal(&pair),
-        };
-
-        if legal {
-            return Some(CMove::new(*pair.start(), *pair.end()));
+    /// Returns if a move is legal for this board state
+    fn is_legal_move(&self, cmove: &CMove) -> bool {
+        match cmove.from().piece() {
+            Piece::King => self.is_king_legal(&cmove),
+            Piece::Queen => self.is_queen_legal(&cmove),
+            Piece::Bishop => self.is_bishop_legal(&cmove),
+            Piece::Knight => self.is_knight_legal(&cmove),
+            Piece::Rook => self.is_rook_legal(&cmove),
+            Piece::Pawn => self.is_pawn_legal(&cmove),
         }
-
-        None
     }
 
-    fn is_king_legal(&self, pair: &SquarePair) -> bool {
-        pair.dx().abs() <= 1 && pair.dy().abs() <= 1
+    fn is_king_legal(&self, cmove: &CMove) -> bool {
+        cmove.dx().abs() <= 1 && cmove.dy().abs() <= 1
     }
 
-    fn is_queen_legal(&self, pair: &SquarePair) -> bool {
-        self.is_path_free(pair)
+    fn is_queen_legal(&self, cmove: &CMove) -> bool {
+        self.is_path_free(cmove)
     }
 
-    fn is_bishop_legal(&self, pair: &SquarePair) -> bool {
-        pair.dx().abs() == pair.dy().abs() && self.is_path_free(pair)
+    fn is_bishop_legal(&self, cmove: &CMove) -> bool {
+        cmove.dx().abs() == cmove.dy().abs() && self.is_path_free(cmove)
     }
 
-    fn is_knight_legal(&self, pair: &SquarePair) -> bool {
-        (pair.dx().abs() == 2 && pair.dy().abs() == 1)
-            || (pair.dx().abs() == 1 && pair.dy().abs() == 2)
+    fn is_knight_legal(&self, cmove: &CMove) -> bool {
+        (cmove.dx().abs() == 2 && cmove.dy().abs() == 1)
+            || (cmove.dx().abs() == 1 && cmove.dy().abs() == 2)
     }
 
-    fn is_rook_legal(&self, pair: &SquarePair) -> bool {
-        if pair.dx() != 0 && pair.dy() != 0 {
+    fn is_rook_legal(&self, cmove: &CMove) -> bool {
+        if cmove.dx() != 0 && cmove.dy() != 0 {
             return false;
         }
 
-        self.is_path_free(pair)
+        self.is_path_free(cmove)
     }
 
     // Pawn move is legal only if it is taking a piece
-    fn is_pawn_legal(&self, pair: &SquarePair) -> bool {
-        pair.dx().abs() == 1 && pair.dy() == -1
+    fn is_pawn_legal(&self, cmove: &CMove) -> bool {
+        cmove.dx().abs() == 1 && cmove.dy() == -1
     }
 
-    fn is_path_free(&self, pair: &SquarePair) -> bool {
+    fn is_path_free(&self, cmove: &CMove) -> bool {
         // There is no straight line or diagonal to get through
-        if pair.dx().abs() != pair.dy().abs() && pair.dx() != 0 && pair.dy() != 0 {
+        if cmove.dx().abs() != cmove.dy().abs() && cmove.dx() != 0 && cmove.dy() != 0 {
             return false;
         }
 
-        let x_inc = pair.dx().signum() as i16;
-        let y_inc = pair.dy().signum() as i16;
+        let x_inc = cmove.dx().signum() as i16;
+        let y_inc = cmove.dy().signum() as i16;
 
-        let mut x: i16 = pair.start().location().file() as i16; // Safe to cast u8 to i16
-        let mut y: i16 = pair.start().location().rank() as i16; // Safe to cast u8 to i16
+        let mut x: i16 = cmove.from().location().file() as i16; // Safe to cast u8 to i16
+        let mut y: i16 = cmove.from().location().rank() as i16; // Safe to cast u8 to i16
 
         loop {
             x = x + x_inc;
@@ -266,15 +251,15 @@ impl Board {
 
             let file = x;
             let rank = y;
-            if rank == pair.end().location().rank() as i16
-                && file == pair.end().location().file() as i16
+            if rank == cmove.to().location().rank() as i16
+                && file == cmove.to().location().file() as i16
             {
                 return true;
             }
 
             if self
                 .occupied_squares
-                .get(&Location::new(file as u8, rank as u8).expect("valid file/rank"))
+                .get(&Location::try_new(file as u8, rank as u8).expect("valid file/rank"))
                 .is_some()
             {
                 return false;
@@ -291,21 +276,23 @@ impl Board {
             BoardState::Lost
         } else {
             BoardState::InProgress
-        }
+        };
     }
 
     /// This is just a cartesian product of {occupied_squares} x {occupied_squares}
-    fn all_possible_move_pairs(&self) -> impl IntoIterator<Item = SquarePair> {
+    /// however the moves are validated against the current board state
+    fn all_valid_moves(&self) -> impl IntoIterator<Item = CMove> {
         let ret = self
             .all_occupied_squares()
             .into_iter()
             .map(|start| {
                 self.all_occupied_squares()
                     .into_iter()
-                    .filter_map(move |end| SquarePair::try_new(start, end).ok())
+                    .filter_map(move |end| CMove::try_new(start, end).ok())
             })
             .flatten()
-            .collect::<Vec<SquarePair>>();
+            .filter(|m| self.is_legal_move(m))
+            .collect::<Vec<CMove>>();
 
         return ret;
     }
@@ -313,7 +300,7 @@ impl Board {
     fn all_occupied_squares(&self) -> impl IntoIterator<Item = Square> {
         self.occupied_squares
             .iter()
-            .map(|(location, piece)| Square::new(location.clone(), Some(piece.clone())))
+            .map(|(location, piece)| Square::new(location.clone(), piece.clone()))
     }
 
     fn board_state_changed(&mut self) {
@@ -382,7 +369,7 @@ impl Display for BoardState {
 
 #[cfg(test)]
 pub fn set_board_square(board: &mut Board, square: Square) -> Option<Piece> {
-    board.set(*square.location(), square.piece())
+    board.set(*square.location(), Some(square.piece()))
 }
 
 #[cfg(test)]
@@ -396,7 +383,7 @@ mod tests {
     }
 
     macro_rules! mv {
-        ($from:literal, $to:literal) => {{ CMove::new(sq!($from), sq!($to)) }};
+        ($from:literal, $to:literal) => {{ CMove::try_new(sq!($from), sq!($to)).unwrap() }};
     }
 
     macro_rules! validate_board {
@@ -451,7 +438,7 @@ mod tests {
         let mut board = Board::new();
         assert_eq!(0, board.pieces_remaining());
         assert_eq!(0, board.legal_moves.len());
-        assert!(board.make_move(mv!("Rb2", "Nd1")).is_none());
+        assert!(board.make_move(mv!("Rb2", "Nd1")).is_err());
 
         set_board_square(&mut board, sq!("Qa4"));
         set_board_square(&mut board, sq!("Ka2"));
@@ -500,11 +487,11 @@ mod tests {
         assert_eq!(10, board.pieces_remaining());
 
         // Validate some illegal moves
-        assert!(board.make_move(mv!("Ka2", "Pa2")).is_none());
-        assert!(board.make_move(mv!("Rb2", "Nd1")).is_none());
+        assert!(board.make_move(mv!("Rb2", "Nd1")).is_err());
 
-        set_board_square(&mut board, sq!(".b2"));
-        set_board_square(&mut board, sq!(".c4"));
+        // Modify the board to test the next set of valid moves
+        board.set(Location::try_parse("b2").unwrap(), None);
+        board.set(Location::try_parse("c4").unwrap(), None);
         set_board_square(&mut board, sq!("Rc1"));
 
         // Q . . .
@@ -551,11 +538,11 @@ mod tests {
         assert_eq!(BoardState::InProgress, board.game_state);
         assert_eq!(4, board.pieces_remaining());
 
-        assert!(board.make_move(mv!("Na1", "Rc2")).is_some());
+        assert!(board.make_move(mv!("Na1", "Rc2")).is_ok());
         assert_eq!(3, board.pieces_remaining());
         assert_eq!(BoardState::InProgress, board.game_state);
 
-        assert!(board.make_move(mv!("Pb3", "Ka4")).is_some());
+        assert!(board.make_move(mv!("Pb3", "Ka4")).is_ok());
         assert_eq!(2, board.pieces_remaining());
         assert_eq!(BoardState::Lost, board.game_state);
 
@@ -574,8 +561,8 @@ mod tests {
         assert_eq!(4, board.pieces_remaining());
         assert_eq!(BoardState::InProgress, board.game_state);
 
-        board.make_move(mv!("Qa3", "Pa4"));
-        board.make_move(mv!("Nc2", "Pa1"));
+        board.make_move(mv!("Qa3", "Pa4")).unwrap();
+        board.make_move(mv!("Nc2", "Pa1")).unwrap();
         assert_eq!(2, board.pieces_remaining());
         assert_eq!(BoardState::InProgress, board.game_state);
 
@@ -583,7 +570,7 @@ mod tests {
         // . . . .
         // . . . .
         // N . . .
-        board.make_move(mv!("Qa4", "Na1"));
+        board.make_move(mv!("Qa4", "Na1")).unwrap();
         assert_eq!(1, board.pieces_remaining());
         assert_eq!(BoardState::Won, board.game_state);
     }
