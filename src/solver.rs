@@ -20,7 +20,7 @@ impl Solver {
         let mut moves = self.moves.clone();
         let mut board = self.board.clone();
         moves.push(m.clone());
-        board.make_move(m);
+        board.make_move(m).unwrap(); // TODO: what is this here for? Why only 1 move. Use expect or change to result
         Solver { board, moves }
     }
 
@@ -48,11 +48,12 @@ impl Solver {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::board::{square::Square, Board};
+    use crate::board::set_board_square;
+    use crate::board::{Board, square::Square};
 
     macro_rules! sq {
         ($sq:literal) => {
-            Square::parse($sq)
+            Square::parse($sq).unwrap()
         };
     }
 
@@ -64,14 +65,14 @@ mod tests {
         // B . B N
         // P . N .
 
-        board.set(sq!("Pa1"));
-        board.set(sq!("Ba2"));
-        board.set(sq!("Ra3"));
-        board.set(sq!("Rb4"));
-        board.set(sq!("Nc1"));
-        board.set(sq!("Bc2"));
-        board.set(sq!("Nd2"));
-        board.set(sq!("Pd3"));
+        set_board_square(&mut board, sq!("Pa1"));
+        set_board_square(&mut board, sq!("Ba2"));
+        set_board_square(&mut board, sq!("Ra3"));
+        set_board_square(&mut board, sq!("Rb4"));
+        set_board_square(&mut board, sq!("Nc1"));
+        set_board_square(&mut board, sq!("Bc2"));
+        set_board_square(&mut board, sq!("Nd2"));
+        set_board_square(&mut board, sq!("Pd3"));
 
         let solver = Solver::new(board.clone());
         let solutions = solver.solve();
@@ -80,7 +81,7 @@ mod tests {
             let mut board = board.clone();
             solution
                 .into_iter()
-                .for_each(|m| assert!(board.make_move(m).is_some()));
+                .for_each(|m| assert!(board.make_move(m).is_ok()));
             assert_eq!(BoardState::Won, board.game_state);
         }
     }
@@ -93,13 +94,13 @@ mod tests {
         // P . N .
 
         let mut board = Board::new();
-        board.set(sq!("Pa1"));
-        board.set(sq!("Ba2"));
-        board.set(sq!("Ra3"));
-        board.set(sq!("Rb4"));
-        board.set(sq!("Nc1"));
-        board.set(sq!("Bc2"));
-        board.set(sq!("Nd2"));
+        set_board_square(&mut board, sq!("Pa1"));
+        set_board_square(&mut board, sq!("Ba2"));
+        set_board_square(&mut board, sq!("Ra3"));
+        set_board_square(&mut board, sq!("Rb4"));
+        set_board_square(&mut board, sq!("Nc1"));
+        set_board_square(&mut board, sq!("Bc2"));
+        set_board_square(&mut board, sq!("Nd2"));
 
         let solver = Solver::new(board.clone());
         let solutions = solver.solve();

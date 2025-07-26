@@ -50,7 +50,7 @@ fn solve_puzzle(board: Board) {
         return;
     }
     println!("Found {} solutions", solutions.len());
-    let solution = solutions.first().unwrap();
+    let solution = solutions.first().expect("solutions len > 0");
     let mut idx = 0;
     solution.iter().for_each(|m| {
         idx += 1;

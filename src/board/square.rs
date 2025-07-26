@@ -1,37 +1,59 @@
+use crate::board::constants::FILE_CHARS;
+
 use super::constants::BOARD_SIZE;
 use super::piece::Piece;
-use core::fmt;
+use eyre::{Context, OptionExt, Result, bail, ensure};
 
-#[derive(Clone, Eq, Hash, PartialEq)]
-pub struct Square {
-    // a = 0, b = 1, c = 2, d = 3 and so on.
-    pub file: usize,
-
-    // 1 = 0, 2 = 1, 3 = 2, 4 = 3 and so on.
-    pub rank: usize,
-
-    pub piece: Option<Piece>,
+#[derive(Clone, Debug, Copy, Eq, Hash, PartialEq)]
+pub struct Location {
+    file: u8,
+    rank: u8,
 }
 
-pub struct SquarePair {
-    pub start: Square,
-    pub end: Square,
-    pub dx: usize,
-    pub dy: usize,
-    pub x_dir: i8,
-    pub y_dir: i8,
-}
-
-impl Square {
-    pub fn new(file: usize, rank: usize, piece: Option<Piece>) -> Self {
-        Square { file, rank, piece }
+impl Location {
+    pub fn file(&self) -> u8 {
+        self.file
     }
 
-    pub fn parse(notation: &str) -> Self {
-        let mut chars = notation.chars();
-        let piece = chars.next().expect("Piece missing");
-        let piece = Piece::parse(&piece.to_string());
-        let file = chars.next().expect("File missing");
+    pub fn rank(&self) -> u8 {
+        self.rank
+    }
+
+    pub fn try_new(file: u8, rank: u8) -> Result<Self> {
+        ensure!(
+            file < BOARD_SIZE,
+            "file should be between 0-{}",
+            BOARD_SIZE - 1
+        );
+        ensure!(
+            rank < BOARD_SIZE,
+            "rank should be between 0-{}",
+            BOARD_SIZE - 1
+        );
+        Ok(Location { file, rank })
+    }
+
+    pub fn file_notation(&self) -> String {
+        String::from(
+            FILE_CHARS
+                .chars()
+                .nth(self.file() as usize)
+                .expect("checked on construction"),
+        )
+    }
+
+    pub fn rank_notation(&self) -> String {
+        format!("{}", BOARD_SIZE - self.rank)
+    }
+
+    pub fn notation(&self) -> String {
+        format!("{}{}", self.file_notation(), self.rank_notation())
+    }
+
+    pub fn try_parse(notation: &str) -> Result<Self> {
+        ensure!(notation.len() == 2, "notation for Location is 2 chars");
+
+        let file = notation.chars().nth(0).expect("File missing");
         let file = match file {
             'a' => 0,
             'b' => 1,
@@ -40,84 +62,60 @@ impl Square {
             _ => panic!("file should be between a-d"),
         };
 
-        let rank = chars.next().unwrap().to_digit(10).expect("rank missing") as usize;
-        if rank < 1 || rank > BOARD_SIZE {
-            panic!("rank should be between 1-{}", BOARD_SIZE);
-        }
+        let rank = notation
+            .chars()
+            .nth(1)
+            .ok_or_eyre("no rank")
+            .context("getting rank")?
+            .to_digit(10)
+            .ok_or_eyre("rank was not digit")
+            .context("parse rank digit")? as u8;
+
+        ensure!(
+            (1..=BOARD_SIZE).contains(&rank),
+            format!("rank should be between 1-{}", BOARD_SIZE)
+        );
         let rank = BOARD_SIZE - rank;
-        Square::new(file, rank, piece)
+        Location::try_new(file, rank)
+    }
+}
+
+#[derive(Clone, Debug, Copy, Eq, Hash, PartialEq)]
+pub struct Square {
+    location: Location,
+    piece: Piece,
+}
+
+impl Square {
+    pub fn location(&self) -> &Location {
+        &self.location
     }
 
-    pub fn file_notation(&self) -> String {
-        String::from("abcd".chars().nth(self.file).unwrap())
+    pub fn piece(&self) -> Piece {
+        self.piece
     }
 
-    pub fn rank_notation(&self) -> String {
-        format!("{}", BOARD_SIZE - self.rank)
+    pub fn new(location: Location, piece: Piece) -> Self {
+        Square { location, piece }
+    }
+
+    pub fn parse(notation: &str) -> Result<Self> {
+        let mut chars = notation.chars();
+        let piece = chars.next().expect("Piece missing");
+        let piece = match piece {
+            '.' => bail!("no longer tracking empty squares"),
+            c => Piece::try_from(c.to_string().as_str()).context("parse char to Piece")?,
+        };
+        let location = Location::try_parse(chars.as_str());
+        Ok(Square::new(location.context("parse location")?, piece))
     }
 
     pub fn notation(&self) -> String {
-        format!(
-            "{}{}{}",
-            self.piece_notation(),
-            self.file_notation(),
-            BOARD_SIZE - self.rank
-        )
-    }
-
-    pub fn is_occupied(&self) -> bool {
-        self.piece.is_some()
+        format!("{}{}", self.piece_notation(), self.location().notation(),)
     }
 
     fn piece_notation(&self) -> String {
-        if self.piece.is_none() {
-            "".to_string()
-        } else {
-            self.piece.unwrap().notation()
-        }
-    }
-}
-
-impl SquarePair {
-    pub fn new(start: Square, end: Square) -> Self {
-        let mut dx = 0;
-        let mut dy = 0;
-        let mut x_dir = 0;
-        let mut y_dir = 0;
-        if start.file > end.file {
-            x_dir = -1;
-            dx = start.file - end.file;
-        } else if end.file > start.file {
-            x_dir = 1;
-            dx = end.file - start.file;
-        }
-
-        if start.rank > end.rank {
-            y_dir = -1;
-            dy = start.rank - end.rank;
-        } else if end.rank > start.rank {
-            y_dir = 1;
-            dy = end.rank - start.rank;
-        }
-
-        SquarePair {
-            start,
-            end,
-            dx,
-            dy,
-            x_dir,
-            y_dir,
-        }
-    }
-
-    pub fn is_different(&self) -> bool {
-        self.dx != 0 || self.dy != 0
-    }
-}
-
-impl fmt::Debug for Square {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}({},{})", self.notation(), self.file, self.rank)
+        self.piece.to_string()
     }
 }
 
@@ -128,10 +126,10 @@ mod tests {
     macro_rules! validate_square {
         ($notation:literal, $file:expr, $rank:expr) => {
             let notation = format!("{}{}", "K", $notation);
-            let square = Square::parse(&notation);
-            assert_eq!(square.file, $file);
-            assert_eq!(square.rank, $rank);
-            assert_eq!(square.piece, Some(Piece::King));
+            let square = Square::parse(&notation).unwrap();
+            assert_eq!(square.location().file(), $file);
+            assert_eq!(square.location().rank(), $rank);
+            assert_eq!(square.piece, Piece::King);
             assert_eq!(square.notation(), notation);
         };
     }
@@ -154,5 +152,14 @@ mod tests {
         validate_square!("d2", 3, 2);
         validate_square!("d3", 3, 1);
         validate_square!("d4", 3, 0);
+    }
+
+    // Assert trying to create a SquarePair where start and end are the same is an err
+
+    #[test]
+    fn test_location_parse() {
+        let location = Location::try_parse("a1").unwrap();
+        assert_eq!(location.file, 0);
+        assert_eq!(location.rank, 3);
     }
 }

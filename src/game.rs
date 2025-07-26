@@ -7,12 +7,13 @@ use button::Button;
 use color::UiColor;
 use macroquad::{audio, math, prelude::*, rand};
 use shadow::draw_shadow;
-use sol_chess::{
-    board::{Board, BoardState},
+use sound::Sounds;
+
+use crate::{
+    board::{Board, BoardState, square::Location},
+    game::texture::Texture,
     generator::{self, RandomRange},
 };
-use sound::Sounds;
-use texture::PieceTexture;
 
 pub mod button;
 pub mod color;
@@ -311,9 +312,13 @@ impl Game {
                 color,
             );
 
-            if let Some(p) = &self.board.cells[square.i][square.j] {
+            if let Some(p) = &self
+                .board
+                .occupied_squares
+                .get(&Location::try_new(square.i as u8, square.j as u8).expect("valid file/rank"))
+            {
                 let offset = (square.rect.w - sprite_size) / 2.0;
-                let dtp = PieceTexture::for_piece(*p, sprite_size);
+                let dtp = p.texture(sprite_size);
                 if !square.is_source {
                     draw_texture_ex(
                         &self.texture_res,
@@ -329,8 +334,11 @@ impl Game {
         });
 
         if let Some(selected_square) = selected_square {
-            if let Some(p) = self.board.cells[selected_square.i][selected_square.j] {
-                let dtp = PieceTexture::for_piece(p, sprite_size);
+            if let Some(p) = self.board.occupied_squares.get(
+                &Location::try_new(selected_square.i as u8, selected_square.j as u8)
+                    .expect("valid file/rank"),
+            ) {
+                let dtp = p.texture(sprite_size);
                 draw_texture_ex(
                     &self.texture_res,
                     mouse_position().0 - sprite_size / 2.0,
@@ -528,7 +536,9 @@ impl Game {
         let mut selected = None;
         for square in &mut self.squares {
             if mouse.overlaps_rect(&square.rect) {
-                if let Some(_) = self.board.cells[square.i][square.j] {
+                if let Some(_) = self.board.occupied_squares.get(
+                    &Location::try_new(square.i as u8, square.j as u8).expect("valid file/rank"),
+                ) {
                     selected = Some((square.i, square.j));
                 }
             }
@@ -538,16 +548,16 @@ impl Game {
             self.get(i, j).is_source = true;
             let mut target_squares = vec![];
             for m in self.board.legal_moves.iter() {
-                if m.from.file == i && m.from.rank == j {
-                    target_squares.push((m.to.file, m.to.rank));
+                if m.from().location().file() == i as u8 && m.from().location().rank() == j as u8 {
+                    target_squares.push((m.to().location().file(), m.to().location().rank()));
                 }
             }
 
             for (i, j) in target_squares {
-                self.get(i, j).is_target = true;
+                self.get(i as usize, j as usize).is_target = true;
             }
 
-            return GameState::SelectTarget(selected.unwrap());
+            return GameState::SelectTarget((i, j));
         }
 
         if let Some((i, j)) = previous_target {
@@ -568,7 +578,9 @@ impl Game {
         let mut selected = None;
         for square in &mut self.squares {
             if mouse.overlaps_rect(&square.rect) {
-                if let Some(_) = self.board.cells[square.i][square.j] {
+                if let Some(_) = self.board.occupied_squares.get(
+                    &Location::try_new(square.i as u8, square.j as u8).expect("valid file/rank"),
+                ) {
                     selected = Some((square.i, square.j));
                 }
             }
@@ -592,11 +604,14 @@ impl Game {
 
         if is_legal {
             let m = self.board.legal_moves.iter().find(|m| {
-                m.from.file == s_x && m.from.rank == s_y && m.to.file == x && m.to.rank == y
+                m.from().location().file() == s_x as u8
+                    && m.from().location().rank() == s_y as u8
+                    && m.to().location().file() == x as u8
+                    && m.to().location().rank() == y as u8
             });
 
             let m = m.expect("legal move should be found");
-            self.board.make_move(m.clone());
+            self.board.make_move(m.clone()).expect("move is valid");
 
             if self.board.game_state == BoardState::Won || self.board.game_state == BoardState::Lost
             {

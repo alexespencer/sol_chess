@@ -1,40 +1,57 @@
 use super::{piece::Piece, square::Square};
+use eyre::{Result, ensure};
 
-#[derive(PartialEq, Hash, Eq, Clone)]
+#[derive(PartialEq, Hash, Eq, Clone, Debug)]
 pub struct CMove {
-    pub from_piece: Piece,
-    pub from: Square,
-    pub to_piece: Piece,
-    pub to: Square,
-
-    // Used to disambiguate when looking at notation
-    disambig: String,
+    from: Square,
+    to: Square,
 }
 
 impl CMove {
-    pub fn new(from: Square, to: Square) -> Self {
-        let disambig = String::from("");
-        let from_piece = from.piece.expect("Trying to move a blank");
-        let to_piece = to.piece.expect("Trying to capture a blank");
-        CMove {
-            from_piece,
-            from,
-            to_piece,
-            to,
-            disambig,
-        }
+    // TODO: moves could be created and validated from a Board?
+
+    pub fn try_new(from: Square, to: Square) -> Result<Self> {
+        ensure!(
+            from.location() != to.location(),
+            "from/to location must not be the same"
+        );
+        Ok(CMove { from, to })
     }
 
     pub fn notation(&self) -> String {
-        let piece_qualifier = match &self.from_piece {
-            Piece::Pawn => self.from.file_notation(),
-            p => p.notation(),
+        let piece_qualifier = match &self.from.piece() {
+            Piece::Pawn => self.from.location().file_notation(),
+            p => p.to_string(),
         };
-        format!(
-            "{}{}x{}",
-            piece_qualifier,
-            self.disambig,
-            self.to.notation()
-        )
+        format!("{}x{}", piece_qualifier, self.to.notation())
+    }
+
+    pub fn from(&self) -> &Square {
+        &self.from
+    }
+
+    pub fn to(&self) -> &Square {
+        &self.to
+    }
+
+    pub fn dx(&self) -> isize {
+        self.to.location().file() as isize - self.from.location().file() as isize
+    }
+
+    pub fn dy(&self) -> isize {
+        self.to.location().rank() as isize - self.from.location().rank() as isize
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_square_pair_try_new_same_start_end() {
+        let start = Square::parse("Ka1").unwrap();
+        let end = Square::parse("Ka1").unwrap();
+        let result = CMove::try_new(start, end);
+        assert!(result.is_err());
     }
 }

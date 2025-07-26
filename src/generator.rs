@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use crate::{
-    board::{piece::Piece, Board},
+    board::{Board, piece::Piece},
     solver::Solver,
 };
 
@@ -27,7 +27,7 @@ pub fn generate(num_pieces: u32, num_solutions: u32, rand: &impl RandomRange) ->
         Piece::Rook,
     ];
 
-    if num_pieces > candidate_pieces.len().try_into().unwrap() {
+    if num_pieces as usize > candidate_pieces.len() {
         panic!(
             "Number of pieces to place on the board should be <= {}",
             candidate_pieces.len()
@@ -99,7 +99,7 @@ fn try_generate(
     let mut piece_success = 0;
     for _ in 0..num_pieces {
         let mut placed = false;
-        let empty_squares = board.empty_squares();
+        let empty_squares = board.empty_locations();
         let mut attempts = 15;
         while !placed {
             if attempts == 0 {
@@ -112,9 +112,10 @@ fn try_generate(
             let index = rand.gen_range(0, candidate_pieces.len());
             let piece = candidate_pieces[index];
             let square_index = rand.gen_range(0, empty_squares.len());
-            let mut random_square = empty_squares[square_index].clone();
-            random_square.piece = Some(piece);
-            board.set(random_square.clone());
+
+            let random_location = empty_squares[square_index].clone();
+            board.set(random_location, Some(piece));
+
             let solutions = Solver::new(board.clone()).solve();
             if solutions.len() > 0 {
                 placed = true;
@@ -123,8 +124,7 @@ fn try_generate(
                 continue;
             }
 
-            random_square.piece = None;
-            board.set(random_square);
+            board.set(random_location, None);
         }
     }
 
