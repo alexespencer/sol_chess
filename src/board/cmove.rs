@@ -2,10 +2,10 @@ use super::{piece::Piece, square::Square};
 
 #[derive(PartialEq, Hash, Eq, Clone)]
 pub struct CMove {
-    pub from_piece: Piece,
+    pub from_piece: Piece, // TODO: remove, duplicated
     pub from: Square,
     pub to_piece: Piece,
-    pub to: Square,
+    pub to: Square, // TODO: remove, duplicated
 }
 
 impl CMove {
