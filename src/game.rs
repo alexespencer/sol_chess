@@ -75,7 +75,6 @@ struct GameSquare {
 pub enum ButtonAction {
     Reset,
     Next,
-    Hint,
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
@@ -156,8 +155,6 @@ impl Game {
             match action {
                 ButtonAction::Reset => self.reset(),
                 ButtonAction::Next => self.next_puzzle(),
-                ButtonAction::Hint => { // TODO: highlight any move that leads to a solution
-                }
             }
         } else {
             let mut mode_btn_clicked = None;
@@ -483,22 +480,6 @@ impl Game {
             UiColor::Yellow,
             self.sounds.mode.clone(),
         );
-
-        // Mirror the easy button location for the "hint button"
-        let hint_btn = Button::new(
-            "Hint",
-            Rect::new(
-                board_x
-                    + board_width
-                    + ((self.window_width - (board_x + board_width + btn_w)) / 2.),
-                board_y + self.square_width + (self.square_width - btn_h) / 2.,
-                btn_w,
-                btn_h,
-            ),
-            UiColor::Yellow,
-            self.sounds.button.clone(),
-        );
-        self.gp_btns.insert(ButtonAction::Hint, hint_btn);
 
         let medium_btn = Button::new(
             "Medium",
