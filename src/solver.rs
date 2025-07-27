@@ -16,11 +16,11 @@ impl Solver {
         }
     }
 
-    fn clone(&self, m: CMove) -> Self {
+    fn clone_with_move(&self, m: CMove) -> Self {
         let mut moves = self.moves.clone();
         let mut board = self.board.clone();
         moves.push(m.clone());
-        board.make_move(m).unwrap(); // TODO: what is this here for? Why only 1 move. Use expect or change to result
+        board.make_move(m).expect("valid move");
         Solver { board, moves }
     }
 
@@ -36,7 +36,7 @@ impl Solver {
         };
 
         self.board.legal_moves().iter().for_each(|m| {
-            let solver = self.clone(m.clone());
+            let solver = self.clone_with_move(m.clone());
             let more_solutions = solver.solve();
             solutions.extend(more_solutions);
         });

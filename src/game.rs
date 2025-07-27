@@ -7,11 +7,14 @@ use button::Button;
 use color::UiColor;
 use macroquad::{audio, math, prelude::*, rand};
 use shadow::draw_shadow;
-use sound::Sounds;
+// use sound::Sounds;
 
 use crate::{
     board::{Board, BoardState, square::Location},
-    game::texture::Texture,
+    game::{
+        sound::{Sound, Sounds},
+        texture::Texture,
+    },
     generator::{self, RandomRange},
 };
 
@@ -444,7 +447,7 @@ impl Game {
             "Reset",
             Rect::new(board_x + btn_x_offset, btn_y, btn_w, btn_h),
             UiColor::Yellow,
-            self.sounds.button.clone(),
+            self.sounds.sound(Sound::Button).clone(),
         );
         let mut next_btn = Button::new(
             "Next",
@@ -455,7 +458,7 @@ impl Game {
                 btn_h,
             ),
             UiColor::Green,
-            self.sounds.button.clone(),
+            self.sounds.sound(Sound::Button).clone(),
         );
         next_btn.is_active = false;
 
@@ -468,7 +471,7 @@ impl Game {
                 btn_h,
             ),
             UiColor::Brown,
-            self.sounds.button.clone(),
+            self.sounds.sound(Sound::Button).clone(),
         );
         self.rules_btn = vec![rules_button];
 
@@ -485,7 +488,7 @@ impl Game {
                 btn_h,
             ),
             UiColor::Yellow,
-            self.sounds.mode.clone(),
+            self.sounds.sound(Sound::Mode).clone(),
         );
 
         let medium_btn = Button::new(
@@ -497,7 +500,7 @@ impl Game {
                 btn_h,
             ),
             UiColor::Yellow,
-            self.sounds.mode.clone(),
+            self.sounds.sound(Sound::Mode).clone(),
         );
 
         let hard_button = Button::new(
@@ -509,7 +512,7 @@ impl Game {
                 btn_h,
             ),
             UiColor::Yellow,
-            self.sounds.mode.clone(),
+            self.sounds.sound(Sound::Mode).clone(),
         );
 
         self.mode_btns = HashMap::new();
@@ -624,9 +627,9 @@ impl Game {
                         .get_mut(&ButtonAction::Next)
                         .expect("Cannot find next button");
                     next_btn.is_active = true;
-                    audio::play_sound_once(&self.sounds.win);
+                    audio::play_sound_once(&self.sounds.sound(Sound::Win));
                 } else {
-                    audio::play_sound_once(&self.sounds.loss);
+                    audio::play_sound_once(&self.sounds.sound(Sound::Loss));
                 }
 
                 return GameState::GameOver((x, y));
@@ -634,7 +637,7 @@ impl Game {
 
             self.reset_squares();
             self.get(x, y).is_target = true;
-            audio::play_sound_once(&self.sounds.click);
+            audio::play_sound_once(&self.sounds.sound(Sound::Click));
             return GameState::SelectSource(Some((x, y)));
         }
 

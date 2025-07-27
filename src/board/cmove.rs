@@ -8,8 +8,6 @@ pub struct CMove {
 }
 
 impl CMove {
-    // TODO: moves could be created and validated from a Board?
-
     pub fn try_new(from: OccupiedSquare, to: OccupiedSquare) -> Result<Self> {
         ensure!(
             from.location() != to.location(),
