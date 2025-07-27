@@ -27,10 +27,7 @@ impl Sounds {
     pub async fn try_new() -> Result<Self> {
         let mut sounds = HashMap::new();
         for sound in Sound::iter() {
-            sounds.insert(
-                sound,
-                load_sound(dbg!(&format!("assets/{}.wav", sound))).await,
-            );
+            sounds.insert(sound, load_sound(&format!("assets/{}.wav", sound)).await);
         }
         Ok(Self { sounds })
     }
