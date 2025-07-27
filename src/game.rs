@@ -60,7 +60,7 @@ pub struct Game {
     gp_btns: HashMap<ButtonAction, Button>,
     mode_btns: HashMap<GameMode, Button>,
     rules: bool,
-    rules_btn: Vec<Button>,
+    rules_btn: Option<Button>,
 }
 
 struct GameSquare {
@@ -116,7 +116,7 @@ impl Game {
             gp_btns: HashMap::new(),
             mode_btns: HashMap::new(),
             rules: false,
-            rules_btn: Vec::new(),
+            rules_btn: None,
             window_height: 0.,
             window_width: 0.,
             square_width: 0.,
@@ -173,22 +173,23 @@ impl Game {
                 self.next_puzzle();
             } else {
                 let mut rules_btn_clicked = false;
-                for btn in &mut self.rules_btn {
+                if let Some(btn) = self.rules_btn.as_mut() {
                     btn.handle_input();
                     if btn.is_clicked() {
                         rules_btn_clicked = true;
-                        break;
                     }
                 }
 
                 if rules_btn_clicked {
                     self.rules = !self.rules;
-                    if self.rules {
-                        self.rules_btn[0].text = "Close".to_string();
-                        self.rules_btn[0].color = UiColor::Green;
-                    } else {
-                        self.rules_btn[0].text = "Rules".to_string();
-                        self.rules_btn[0].color = UiColor::Brown;
+                    if let Some(rules_btn) = self.rules_btn.as_mut() {
+                        if self.rules {
+                            rules_btn.text = "Close".to_string();
+                            rules_btn.color = UiColor::Green;
+                        } else {
+                            rules_btn.text = "Rules".to_string();
+                            rules_btn.color = UiColor::Brown;
+                        }
                     }
                 }
             }
@@ -361,7 +362,7 @@ impl Game {
             btn.1.draw();
         }
 
-        for btn in &self.rules_btn {
+        if let Some(btn) = &self.rules_btn {
             btn.draw();
         }
     }
@@ -472,7 +473,7 @@ impl Game {
             UiColor::Brown,
             self.sounds.sound(Sound::Button).clone(),
         );
-        self.rules_btn = vec![rules_button];
+        self.rules_btn = Some(rules_button);
 
         self.gp_btns = HashMap::new();
         self.gp_btns.insert(ButtonAction::Next, next_btn);
