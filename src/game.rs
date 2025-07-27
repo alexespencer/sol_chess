@@ -240,16 +240,13 @@ impl Game {
         }
 
         if is_mouse_button_pressed(MouseButton::Left) {
-            let current_state = self.state.clone();
-            let new_state = match current_state {
+            self.state = match self.state {
                 GameState::SelectSource(previous_target) => {
                     self.handle_select_source(mouse_position(), previous_target)
                 }
                 GameState::SelectTarget(source) => GameState::SelectTarget(source),
                 GameState::GameOver(previous_target) => GameState::GameOver(previous_target),
             };
-
-            self.state = new_state;
         }
     }
 
@@ -354,12 +351,12 @@ impl Game {
     }
 
     fn draw_buttons(&self) {
-        for btn in &self.gp_btns {
-            btn.1.draw();
+        for btn in self.gp_btns.values() {
+            btn.draw();
         }
 
-        for btn in &self.mode_btns {
-            btn.1.draw();
+        for btn in self.mode_btns.values() {
+            btn.draw();
         }
 
         if let Some(btn) = &self.rules_btn {
@@ -520,11 +517,8 @@ impl Game {
         self.mode_btns.insert(GameMode::Medium, medium_btn);
         self.mode_btns.insert(GameMode::Hard, hard_button);
 
-        for btn in &mut self.mode_btns {
-            btn.1.is_active = true;
-            if self.game_mode == *btn.0 {
-                btn.1.is_active = false;
-            }
+        for (game_mode, btn) in &mut self.mode_btns {
+            btn.is_active = !(&self.game_mode == game_mode);
         }
     }
 
@@ -607,14 +601,16 @@ impl Game {
 
         if is_legal {
             let legal_moves = self.board.legal_moves();
-            let m = legal_moves.iter().find(|m| {
-                m.from().location().file() == s_x as u8
-                    && m.from().location().rank() == s_y as u8
-                    && m.to().location().file() == x as u8
-                    && m.to().location().rank() == y as u8
-            });
+            let m = legal_moves
+                .iter()
+                .find(|m| {
+                    m.from().location().file() == s_x as u8
+                        && m.from().location().rank() == s_y as u8
+                        && m.to().location().file() == x as u8
+                        && m.to().location().rank() == y as u8
+                })
+                .expect("legal move should be found");
 
-            let m = m.expect("legal move should be found");
             self.board.make_move(m.clone()).expect("move is valid");
 
             if self.board.game_state() == BoardState::Won
