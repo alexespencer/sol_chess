@@ -7,7 +7,6 @@ use button::Button;
 use color::UiColor;
 use macroquad::{audio, math, prelude::*, rand};
 use shadow::draw_shadow;
-// use sound::Sounds;
 
 use crate::{
     board::{Board, BoardState, square::Location},
