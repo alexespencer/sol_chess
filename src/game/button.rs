@@ -1,4 +1,7 @@
-use macroquad::{audio::{self, Sound}, prelude::*};
+use macroquad::{
+    audio::{self, Sound},
+    prelude::*,
+};
 
 use super::{color::UiColor, shadow::draw_shadow};
 
@@ -112,14 +115,14 @@ impl Button {
         if is_mouse_button_pressed(MouseButton::Left) {
             if c.overlaps_rect(&self.rect) {
                 self.is_down = true;
+                self.is_clicked = true;
+                audio::play_sound_once(&self.sound);
                 return;
             }
         }
 
         if is_mouse_button_released(MouseButton::Left) {
             if c.overlaps_rect(&self.rect) {
-                self.is_clicked = true;
-                audio::play_sound_once(&self.sound);
                 self.is_down = false;
                 return;
             }
